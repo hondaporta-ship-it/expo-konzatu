@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北九州マラソン2026 EXPO 混雑シミュレーション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP','Helvetica Neue',Arial,sans-serif;background:#080c16;color:#e2e8f0;overflow-x:hidden}
+
+/* ===== HEADER ===== */
+.header{
+  background:linear-gradient(135deg,#0f172a 0%,#1a2340 100%);
+  padding:12px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid #2563eb;
+  flex-wrap:wrap;gap:8px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+.header h1{font-size:18px;font-weight:900;letter-spacing:-.5px;line-height:1.3}
+.header .sub{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4}
+.spd{display:flex;gap:3px}
+.spd button{
+  background:#1e293b;color:#94a3b8;border:1px solid #334155;
+  font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:700;
+  transition:all .15s;
+}
+.spd button.on{background:#2563eb;color:#fff;border-color:#3b82f6;box-shadow:0 0 12px rgba(37,99,235,.4)}
+.spd button:active{transform:scale(.95)}
+
+/* ===== LAYOUT ===== */
+.layout{display:grid;grid-template-columns:1fr 360px;min-height:calc(100vh - 56px)}
+.left{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.right{
+  background:linear-gradient(180deg,#0f172a,#0a0f1e);
+  border-left:1px solid #1e293b;
+  padding:14px;overflow-y:auto;max-height:calc(100vh - 56px);
+}
+
+/* ===== MAP ===== */
+.map-wrap{
+  flex:1;background:#0b1120;border-radius:12px;overflow:hidden;
+  border:1px solid rgba(59,130,246,.15);position:relative;min-height:300px;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.3);
+}
+canvas{display:block;width:100%;cursor:crosshair}
+
+/* ===== STICKY CONTROL BAR ===== */
+.ctrl{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:linear-gradient(135deg,#111827,#0f172a);
+  border-radius:10px;border:1px solid #1e293b;
+  flex-wrap:wrap;
+  position:sticky;bottom:0;z-index:50;
+  box-shadow:0 -4px 20px rgba(0,0,0,.4);
+}
+.ctrl .time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:26px;font-weight:800;color:#60a5fa;
+  min-width:65px;font-variant-numeric:tabular-nums;
+}
+.ctrl .slider{flex:1;min-width:80px}
+.ctrl input[type=range]{
+  width:100%;height:6px;-webkit-appearance:none;
+  background:#1e293b;border-radius:3px;outline:none;
+}
+.ctrl input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#3b82f6;cursor:pointer;
+  box-shadow:0 0 10px rgba(59,130,246,.5);
+  transition:transform .1s;
+}
+.ctrl input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2)}
+.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:all .15s}
+.btn-play{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:15px;box-shadow:0 2px 12px rgba(37,99,235,.3)}
+.btn-play:hover{background:linear-gradient(135deg,#3b82f6,#2563eb);transform:translateY(-1px)}
+.btn-play:active{transform:translateY(0)}
+.btn-play.on{background:linear-gradient(135deg,#dc2626,#b91c1c);box-shadow:0 2px 12px rgba(220,38,38,.3)}
+.arrived{font-size:12px;color:#94a3b8;white-space:nowrap;font-weight:600}
+
+/* ===== CARDS ===== */
+.card{
+  background:linear-gradient(135deg,#0d1525,#0f1729);
+  border-radius:10px;padding:12px;margin-bottom:10px;
+  border:1px solid rgba(30,41,59,.8);
+  transition:border-color .2s;
+}
+.card:hover{border-color:rgba(59,130,246,.2)}
+.card-t{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.row-l{font-size:13px;color:#94a3b8}
+.row-v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.green{color:#22c55e}.yellow{color:#eab308}.orange{color:#f97316}.red{color:#ef4444}.blue{color:#60a5fa}
+.row-sub{font-size:10px;color:#475569;text-align:right}
+.bar-bg{height:8px;border-radius:4px;background:#1e293b;margin-top:4px;overflow:hidden}
+.bar-fg{height:100%;border-radius:4px;transition:width .3s}
+
+/* ===== ZONES ===== */
+.zone-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(17,24,39,.6)}
+.zone-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.zone-nm{font-size:11px;color:#94a3b8;flex:1}
+.zone-d{font-size:10px;color:#64748b;min-width:55px;text-align:right}
+.zone-n{font-size:13px;font-weight:700;min-width:50px;text-align:right;font-family:'JetBrains Mono',monospace}
+
+/* ===== ALERTS ===== */
+.alert{border-radius:8px;padding:10px;margin-top:6px}
+.alert-r{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2)}
+.alert-y{background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2)}
+.alert-b{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2)}
+.alert-t{font-weight:700;font-size:12px;margin-bottom:3px}
+.alert-r .alert-t{color:#f87171}
+.alert-y .alert-t{color:#facc15}
+.alert-b .alert-t{color:#60a5fa}
+.alert-x{font-size:11px;line-height:1.6}
+.alert-r .alert-x{color:#fca5a5}
+.alert-y .alert-x{color:#fde68a}
+.alert-b .alert-x{color:#93c5fd}
+
+/* ===== PEAK BOX ===== */
+.peak-box{
+  background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(239,68,68,.05));
+  border:1px solid rgba(249,115,22,.25);
+  border-radius:10px;padding:12px;margin-bottom:10px;
+}
+.peak-box h3{color:#fb923c;font-size:12px;font-weight:800;margin-bottom:6px;letter-spacing:.5px}
+.peak-box p{font-size:11px;color:#fdba74;line-height:1.7}
+.peak-box strong{color:#fff}
+
+/* ===== PARAMS ===== */
+.params{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px}
+.params span{font-size:11px}
+.params .k{color:#475569}
+.params .v{color:#94a3b8;font-weight:700}
+
+/* ===== CHART ===== */
+.chart-box{width:100%;height:110px}
+
+/* ===== LEGEND ===== */
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b}
+.leg i{width:14px;height:8px;border-radius:2px;display:inline-block}
+
+/* ===== BADGE ===== */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-live{background:#ef4444;color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;min-height:auto}
+  .right{
+    border-left:none;border-top:1px solid #1e293b;
+    max-height:none;overflow-y:visible;
+    padding:10px;
+  }
+  .left{padding:8px}
+  .map-wrap{min-height:55vw}
+  .header h1{font-size:16px}
+}
+@media(max-width:480px){
+  .header{padding:10px 12px}
+  .header h1{font-size:14px}
+  .header .sub{font-size:10px}
+  .layout{grid-template-columns:1fr}
+  .left{padding:6px}
+  .right{padding:8px}
+  .map-wrap{min-height:60vw;border-radius:8px}
+  .ctrl{padding:8px 10px;gap:6px;border-radius:8px}
+  .ctrl .time{font-size:20px;min-width:55px}
+  .btn-play{padding:8px 14px;font-size:13px}
+  .arrived{font-size:10px}
+  .card{padding:10px;margin-bottom:8px}
+  .row-v{font-size:16px}
+  .zone-nm{font-size:10px}
+  .zone-n{font-size:12px}
+  .peak-box p{font-size:10px}
+  .spd button{font-size:10px;padding:4px 8px}
+}
+
+/* Scrollbar */
+.right::-webkit-scrollbar{width:4px}
+.right::-webkit-scrollbar-track{background:transparent}
+.right::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px}
+.right::-webkit-scrollbar-thumb:hover{background:#334155}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>北九州マラソン2026 EXPO 混雑シミュレーション</h1>
+    <div class="sub">2026/2/15 (日) 大会当日 ｜ 9:00スタート → 制限6時間 ｜ 出走 約10,000人 + 一般来場者 約1,000人</div>
+  </div>
+  <div class="spd" id="spdGroup">
+    <button onclick="setSpd(1)" class="on">×1</button>
+    <button onclick="setSpd(5)">×5</button>
+    <button onclick="setSpd(15)">×15</button>
+    <button onclick="setSpd(30)">×30</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="left">
+    <div class="map-wrap"><canvas id="C"></canvas></div>
+    <div class="ctrl">
+      <button class="btn btn-play" id="playBtn" onclick="toggle()">▶ 再生</button>
+      <span class="time" id="clock">11:10</span>
+      <div class="slider"><input type="range" id="slider" min="0" max="320" value="0" step="0.5" oninput="seek(this.value)"></div>
+      <span class="arrived" id="arrived">到着 0 / 11,000</span>
+    </div>
+  </div>
+  <div class="right">
+    <div class="card">
+      <div class="card-t">シミュレーション条件</div>
+      <div class="params">
+        <span class="k">出走者</span><span class="v">約10,000人</span>
+        <span class="k">一般来場者</span><span class="v">約1,000人</span>
+        <span class="k">スタート</span><span class="v">9:00</span>
+        <span class="k">制限時間</span><span class="v">6時間 (15:00)</span>
+        <span class="k">平均滞在</span><span class="v">15〜20分</span>
+        <span class="k">入口幅</span><span class="v">約5.5m</span>
+      </div>
+    </div>
+    <div class="peak-box" id="peakBox"></div>
+    <div class="card">
+      <div class="card-t">リアルタイム状況 <span class="badge badge-live" id="liveBadge" style="display:none">LIVE</span></div>
+      <div class="row"><span class="row-l">場内人数</span><span class="row-v" id="mOcc">0人</span></div>
+      <div class="row-sub" id="mOccSub"></div>
+      <div class="row"><span class="row-l">ランナー入場</span><span class="row-v" id="mIn">0人/分</span></div>
+      <div class="row"><span class="row-l">退場</span><span class="row-v" id="mOut">0人/分</span></div>
+      <div class="row"><span class="row-l">通路平均密度</span><span class="row-v" id="mDens">0.00</span></div>
+      <div class="bar-bg"><div class="bar-fg" id="mBar"></div></div>
+      <div class="row"><span class="row-l">入口待ち行列</span><span class="row-v" id="mQ">なし</span></div>
+    </div>
+    <div class="card">
+      <div class="card-t">ゾーン別混雑</div>
+      <div id="zoneList"></div>
+    </div>
+    <div class="card">
+      <div class="card-t">到着分布</div>
+      <canvas class="chart-box" id="chartC"></canvas>
+      <div style="font-size:10px;color:#475569;margin-top:3px">青=到着レート ｜ オレンジ=場内人数 ｜ 赤線=現在</div>
+    </div>
+    <div class="card">
+      <div class="card-t">警告</div>
+      <div id="alerts"></div>
+    </div>
+    <div class="card">
+      <div class="card-t">改善提案</div>
+      <div id="tips"></div>
+    </div>
+    <div class="card">
+      <div class="card-t">凡例</div>
+      <div class="legend">
+        <div class="leg"><i style="background:#22c55e"></i>快適 〜0.5</div>
+        <div class="leg"><i style="background:#eab308"></i>混雑 0.5〜1.0</div>
+        <div class="leg"><i style="background:#f97316"></i>過密 1.0〜2.0</div>
+        <div class="leg"><i style="background:#ef4444"></i>危険 2.0〜</div>
+      </div>
+      <div style="font-size:10px;color:#475569;margin-top:6px">※ 2.0人/m²超で歩行困難 ｜ マラソン後は疲労で体感1.5倍</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const RUNNERS=10000,VISITORS=1000,RACE_START=540,TRANSIT_MEAN=12,TRANSIT_SD=5;
+const AVG_STAY=17.5,STAY_SD=5,VISITOR_STAY=35,VISITOR_SD=10;
+const ENTRY_CAP=90,EXIT_CAP=100,SIM0=670,SIMDUR=320;
+const VW=115,VH=78;
+const canvas=document.getElementById('C');
+const ctx=canvas.getContext('2d');
+const DPR=Math.min(window.devicePixelRatio||1,2);
+let S,OX,OY;
+
+function resize(){
+  const w=canvas.parentElement.clientWidth;
+  const h=Math.min(w*VH/VW+20,window.innerHeight-140);
+  canvas.width=w*DPR;canvas.height=h*DPR;
+  canvas.style.height=h+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  S=(w-30)/VW;OX=15;OY=10;
+}
+function tx(x,y){return[OX+x*S,OY+y*S]}
+
+const Z=[
+  {id:'left_aisle',nm:'左側通路(下関/北九州〜ボートレース間)',x:2,y:31,w:20,h:12},
+  {id:'mizuno_front',nm:'ミズノ〜ブース間通路',x:28,y:32,w:42,h:8},
+  {id:'center_mid',nm:'ブース中段通路',x:22,y:40,w:58,h:12},
+  {id:'center_south',nm:'南側通路(トヨタカローラ/アルペン前)',x:22,y:52,w:56,h:8},
+  {id:'right_aisle',nm:'右側通路(映画祭〜180席間)',x:78,y:40,w:10,h:12},
+  {id:'entry_area',nm:'入口・記録証エリア',x:2,y:54,w:20,h:20},
+  {id:'rest_stage',nm:'休憩エリア (180席)',x:88,y:38,w:14,h:12},
+];
+
+const B=[
+  {nm:'出口専用',x:48,y:3,w:12,h:5,c:'#ef4444'},
+  {nm:'入口専用',x:33,y:3,w:12,h:5,c:'#22c55e'},
+  {nm:'総合案内',x:33,y:14,w:12,h:5,c:'#a855f7'},
+  {nm:'ミズノ',x:28,y:22,w:38,h:10,c:'#3b82f6'},
+  {nm:'佐川急便',x:76,y:22,w:10,h:6,c:'#f97316'},
+  {nm:'荷物置き',x:87,y:22,w:10,h:6,c:'#f97316'},
+  {nm:'下関海響\nマラソン',x:4,y:24,w:8,h:7,c:'#8b5cf6'},
+  {nm:'北九州\nマラソン',x:13,y:24,w:8,h:7,c:'#8b5cf6'},
+  {nm:'フォトクリエイト',x:24,y:40,w:9,h:6,c:'#06b6d4'},
+  {nm:'日本マクドナルド',x:24,y:47,w:10,h:5,c:'#eab308'},
+  {nm:'ギミック',x:35,y:47,w:7,h:5,c:'#06b6d4'},
+  {nm:'第一生命保険',x:43,y:47,w:10,h:5,c:'#06b6d4'},
+  {nm:'若鶴酒造',x:34,y:40,w:7,h:6,c:'#06b6d4'},
+  {nm:'鞍和スチール',x:42,y:40,w:7,h:6,c:'#06b6d4'},
+  {nm:'パン工房 櫟',x:50,y:40,w:7,h:6,c:'#06b6d4'},
+  {nm:'北九州観光\nコンベンション',x:58,y:40,w:10,h:6,c:'#06b6d4'},
+  {nm:'三井製糖',x:54,y:47,w:6,h:5,c:'#06b6d4'},
+  {nm:'ぬかだき',x:61,y:47,w:7,h:5,c:'#06b6d4'},
+  {nm:'ゼンリン',x:69,y:47,w:7,h:5,c:'#06b6d4'},
+  {nm:'北九州市\n漫画ミュージアム',x:69,y:40,w:10,h:6,c:'#06b6d4'},
+  {nm:'北九州国際\n映画祭',x:76,y:47,w:8,h:5,c:'#06b6d4'},
+  {nm:'ボートレース若松',x:4,y:40,w:18,h:10,c:'#6366f1'},
+  {nm:'トヨタカローラ博多',x:22,y:60,w:18,h:7,c:'#22c55e'},
+  {nm:'アルペン',x:44,y:60,w:16,h:7,c:'#22c55e'},
+  {nm:'大英産業',x:64,y:60,w:14,h:7,c:'#22c55e'},
+  {nm:'180席',x:88,y:40,w:14,h:10,c:'#475569'},
+  {nm:'ステージ',x:102,y:40,w:8,h:10,c:'#475569'},
+  {nm:'日本陸連\n記録証発行',x:3,y:56,w:14,h:6,c:'#ec4899'},
+  {nm:'ランナー\n路辞サイン',x:3,y:63,w:10,h:5,c:'#ec4899'},
+];
+
+const FP_LEFT=[{x:10,y:74},{x:10,y:60},{x:10,y:36},{x:35,y:35},{x:55,y:35},{x:55,y:19},{x:45,y:12},{x:50,y:4}];
+const FP_RIGHT=[{x:10,y:74},{x:10,y:60},{x:10,y:53},{x:35,y:53},{x:55,y:53},{x:68,y:35},{x:45,y:19},{x:45,y:12},{x:50,y:4}];
+
+const DWELL_POINTS=[
+  {x:22,y:57,w:18,h:3},{x:44,y:57,w:16,h:3},{x:64,y:57,w:14,h:3},
+  {x:28,y:32,w:38,h:3},{x:24,y:46,w:9,h:2},{x:24,y:52,w:10,h:2},
+  {x:4,y:38,w:18,h:2},{x:85,y:38,w:16,h:10},
+];
+
+// ===================== ARRIVAL MODEL =====================
+function gpdf(x,m,s){return Math.exp(-.5*((x-m)/s)**2)/(s*2.5066)}
+function finishPDF(rm){
+  if(rm<125||rm>370)return 0;
+  return .03*RUNNERS*gpdf(rm,145,12)+.12*RUNNERS*gpdf(rm,200,18)+.18*RUNNERS*gpdf(rm,228,15)+.22*RUNNERS*gpdf(rm,255,15)+.18*RUNNERS*gpdf(rm,285,15)+.15*RUNNERS*gpdf(rm,315,15)+.12*RUNNERS*gpdf(rm,345,12);
+}
+function runnerRate(t){
+  const clock=SIM0+t;let rate=0;
+  for(let o=-30;o<=30;o+=.5){rate+=finishPDF(clock-RACE_START-TRANSIT_MEAN-o)*gpdf(o,0,TRANSIT_SD)*.5;}
+  return rate;
+}
+function visitorRate(t){const clock=SIM0+t;if(clock<660||clock>960)return 0;return VISITORS*gpdf(t,110,60);}
+
+const AD=[],OD=[];let cumA=0;
+for(let t=0;t<=SIMDUR;t++){const rr=runnerRate(t),vr=visitorRate(t),tot=rr+vr;cumA+=tot;AD.push({t,rr,vr,total:tot,cum:Math.min(cumA,RUNNERS+VISITORS)});}
+function ncdf(x,m,s){return .5*(1+erf2((x-m)/(s*1.4142)))}
+function erf2(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+.3275911*x);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x))}
+for(let t=0;t<=SIMDUR;t++){
+  let inv=0;const lb=Math.ceil(Math.max(AVG_STAY,VISITOR_STAY)+3*Math.max(STAY_SD,VISITOR_SD));
+  for(let i=Math.max(0,t-lb);i<=t;i++){const d=AD[i];if(!d)continue;const el=t-i;inv+=d.rr*(1-ncdf(el,AVG_STAY,STAY_SD));inv+=d.vr*(1-ncdf(el,VISITOR_STAY,VISITOR_SD));}
+  if(SIM0+t>=960)inv*=Math.max(0,1-(SIM0+t-960)/30);
+  OD.push(Math.max(0,inv));
+}
+
+// ===================== SIMULATION =====================
+function sim(t){
+  let inv=0;const entR=runnerRate(t)+visitorRate(t);
+  for(let i=Math.max(0,Math.floor(t-45));i<=Math.min(SIMDUR,Math.floor(t));i++){const d=AD[i];if(!d)continue;const el=t-i;inv+=d.rr*Math.max(0,1-ncdf(el,AVG_STAY,STAY_SD));inv+=d.vr*Math.max(0,1-ncdf(el,VISITOR_STAY,VISITOR_SD));}
+  if(SIM0+t>=960)inv*=Math.max(0,1-(SIM0+t-960)/30);
+  const exR=runnerRate(Math.max(0,t-AVG_STAY))+visitorRate(Math.max(0,t-VISITOR_STAY));
+  let q=0;const rr=runnerRate(t);
+  if(rr>ENTRY_CAP){for(let i=Math.max(0,Math.floor(t-30));i<=Math.floor(t);i++){const r2=runnerRate(i);if(r2>ENTRY_CAP)q+=r2-ENTRY_CAP;else q=Math.max(0,q-(ENTRY_CAP-r2));}}
+  const zo={};
+  Z.forEach(z=>{
+    let f=0;
+    switch(z.id){case'entry_area':f=.15;break;case'left_aisle':f=.13;break;case'mizuno_front':f=.08;break;case'center_mid':f=.25;break;case'center_south':f=.20;break;case'right_aisle':f=.05;break;case'rest_stage':f=.14;break;}
+    let p=inv*f;
+    if(z.id==='rest_stage'){const clock=SIM0+t;if(clock>=900&&clock<=960)p=180;else if(clock>=870&&clock<900){p=Math.min(p,Math.round(150+30*(clock-870)/30));}else if(clock>960&&clock<=975){p=Math.min(p,Math.round(180-30*(clock-960)/15));}else p=Math.min(p,150);}
+    zo[z.id]={p:Math.round(p),d:p/(z.w*z.h),a:z.w*z.h};
+  });
+  return{inv:Math.round(inv),entR,exR,zo,entU:Math.min(rr/ENTRY_CAP,2),exU:Math.min(exR/EXIT_CAP,2),q:Math.round(q),cum:Math.round(AD[Math.min(Math.floor(t),SIMDUR)]?.cum||0)};
+}
+
+// ===================== DRAWING =====================
+function dc(d,a){if(a===undefined)a=1;if(d<.3)return`rgba(34,197,94,${a})`;if(d<.5)return`rgba(132,204,22,${a})`;if(d<1)return`rgba(234,179,8,${a})`;if(d<2)return`rgba(249,115,22,${a})`;return`rgba(239,68,68,${a})`;}
+function dcs(d){if(d<.3)return'#22c55e';if(d<.5)return'#84cc16';if(d<1)return'#eab308';if(d<2)return'#f97316';return'#ef4444';}
+
+function draw(s){
+  const w=canvas.width/DPR,h=canvas.height/DPR;
+  ctx.clearRect(0,0,w,h);
+  const[fx,fy]=tx(0,0);
+  ctx.fillStyle='#0b1120';ctx.strokeStyle='#1a2540';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.roundRect(fx,fy,VW*S,VH*S,6);ctx.fill();ctx.stroke();
+
+  // Zone heat
+  Z.forEach(z=>{
+    const d=s.zo[z.id];if(!d)return;
+    const[zx,zy]=tx(z.x,z.y);const zw=z.w*S,zh=z.h*S;
+    const cx2=zx+zw/2,cy2=zy+zh/2,r=Math.max(zw,zh)*.7;
+    const g=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,r);
+    g.addColorStop(0,dc(d.d,.5));g.addColorStop(1,dc(d.d,.1));
+    ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,4);ctx.fill();
+    if(d.d>.5){ctx.strokeStyle=dc(d.d,.35);ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,4);ctx.stroke();}
+  });
+
+  // Booths — improved text visibility
+  B.forEach(b=>{
+    const[bx,by]=tx(b.x,b.y);const bw=b.w*S,bh=b.h*S;
+    ctx.fillStyle=b.c+'25';ctx.strokeStyle=b.c+'55';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();ctx.stroke();
+    const fs=Math.max(7,Math.min(11,bw/6));
+    ctx.font=`bold ${fs}px 'Noto Sans JP',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    // Shadow for readability
+    ctx.fillStyle='rgba(0,0,0,.7)';
+    b.nm.split('\n').forEach((l,i,a)=>{ctx.fillText(l,bx+bw/2+.5,by+bh/2+(i-(a.length-1)/2)*(fs+1)+.5);});
+    // Bright text
+    ctx.fillStyle='#c8d6e5';
+    b.nm.split('\n').forEach((l,i,a)=>{ctx.fillText(l,bx+bw/2,by+bh/2+(i-(a.length-1)/2)*(fs+1));});
+  });
+
+  // Flow paths
+  ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.strokeStyle='rgba(96,165,250,.15)';ctx.beginPath();
+  FP_LEFT.forEach((p,i)=>{const[px,py]=tx(p.x,p.y);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
+  ctx.strokeStyle='rgba(250,204,21,.1)';ctx.beginPath();
+  FP_RIGHT.forEach((p,i)=>{const[px,py]=tx(p.x,p.y);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
+  ctx.setLineDash([]);
+
+  drawParts(s);
+
+  // Zone badges
+  Z.forEach(z=>{
+    const d=s.zo[z.id];if(!d||d.p<10)return;
+    const[zx,zy]=tx(z.x,z.y);const zw=z.w*S,zh=z.h*S;
+    const cx2=zx+zw/2,cy2=zy+zh/2;
+    if(d.d>.2){
+      const label=`${d.p}人`;
+      ctx.font="bold 13px 'JetBrains Mono',monospace";
+      const tw=ctx.measureText(label).width;const bw2=tw+14,bh2=22;
+      ctx.fillStyle=dc(d.d,.85);ctx.beginPath();ctx.roundRect(cx2-bw2/2,cy2-bh2/2,bw2,bh2,11);ctx.fill();
+      ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=4;
+      ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(label,cx2,cy2);ctx.shadowBlur=0;
+      if(zh>28){ctx.fillStyle='rgba(255,255,255,.6)';ctx.font="9px 'Noto Sans JP',sans-serif";ctx.fillText(`${d.d.toFixed(1)}人/m²`,cx2,cy2+13);}
+    }
+  });
+
+  // Labels
+  const[ex2,ey2]=tx(2,74);
+  ctx.fillStyle='#22c55e';ctx.font="bold 12px 'Noto Sans JP',sans-serif";ctx.textAlign='left';
+  ctx.fillText('▲ ランナー入口',ex2,ey2+4);
+  if(s.q>20){ctx.fillStyle='#ef4444';ctx.font="bold 11px 'Noto Sans JP',sans-serif";ctx.fillText(`待ち行列 約${s.q}人`,ex2+110,ey2+4);}
+  const[ox2,oy2]=tx(48,0);
+  ctx.fillStyle='#ef4444';ctx.font="bold 12px 'Noto Sans JP',sans-serif";ctx.textAlign='center';
+  ctx.fillText('▼ 出口',ox2+10,oy2-3);
+  drawBar(42,0,s.entU,'入口',80);drawBar(62,0,s.exU,'出口',80);
+}
+
+function drawBar(mx,my,u,label,bw){
+  const[bx,by]=tx(mx,my);const y2=by-13;
+  ctx.fillStyle='#1a2540';ctx.beginPath();ctx.roundRect(bx,y2,bw,5,2.5);ctx.fill();
+  ctx.fillStyle=u>1?'#ef4444':u>.7?'#f97316':'#22c55e';
+  ctx.beginPath();ctx.roundRect(bx,y2,Math.min(u/1.5,1)*bw,5,2.5);ctx.fill();
+  ctx.fillStyle='#64748b';ctx.font="8px 'Noto Sans JP',sans-serif";ctx.textAlign='left';
+  ctx.fillText(`${label}${Math.round(Math.min(u,1.5)*100)}%`,bx,y2-2);
+}
+
+// ===================== PARTICLES =====================
+let parts=[];
+function randInZone(z){for(let t=0;t<30;t++){const x=z.x+Math.random()*z.w,y=z.y+Math.random()*z.h;let ib=false;for(const b of B){if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h){ib=true;break;}}if(!ib)return{x,y};}return{x:z.x+z.w/2,y:z.y+z.h/2};}
+
+function drawParts(s){
+  const totalTarget=Math.min(Math.round(s.inv),3000);
+  const zoneTargets={};
+  Z.forEach(z=>{const d=s.zo[z.id];if(!d)return;zoneTargets[z.id]=Math.round(d.p*(totalTarget/Math.max(s.inv,1)));});
+  if(Math.abs(parts.length-totalTarget)>totalTarget*.3||parts.length===0){
+    parts=[];
+    Z.forEach(z=>{const n=zoneTargets[z.id]||0;for(let i=0;i<n;i++){const pos=randInZone(z);let dw=false;for(const dp of DWELL_POINTS){if(pos.x>=dp.x&&pos.x<dp.x+dp.w&&pos.y>=dp.y&&pos.y<dp.y+dp.h){dw=true;break;}}parts.push({x:pos.x,y:pos.y,zid:z.id,vx:(Math.random()-.5)*.06,vy:(Math.random()-.5)*.06,life:80+Math.random()*160,dwelling:dw,dwellTimer:dw?30+Math.random()*60:0,col:Math.random()<.1?'rgba(251,191,36,':'rgba(96,165,250,'});}});
+  }
+  while(parts.length<totalTarget){const zids=Object.keys(zoneTargets);const zid=zids[Math.floor(Math.random()*zids.length)];const z=Z.find(zz=>zz.id===zid);if(!z)break;const pos=randInZone(z);parts.push({x:pos.x,y:pos.y,zid,vx:(Math.random()-.5)*.06,vy:(Math.random()-.5)*.06,life:80+Math.random()*160,dwelling:false,dwellTimer:0,col:Math.random()<.1?'rgba(251,191,36,':'rgba(96,165,250,'});}
+  while(parts.length>totalTarget)parts.pop();
+
+  parts.forEach(p=>{
+    const zd=s.zo[p.zid],density=zd?zd.d:0;
+    const spM=density>1.5?.02:density>1?.04:density>.5?.06:.1;
+    if(p.dwelling&&p.dwellTimer>0){p.dwellTimer-=.3;p.x+=(Math.random()-.5)*.02;p.y+=(Math.random()-.5)*.02;}
+    else{p.dwelling=false;p.x+=p.vx*spM*3;p.y+=p.vy*spM*3;if(Math.random()<.02){p.vx=(Math.random()-.5)*.1;p.vy=(Math.random()-.5)*.1;}if(Math.random()<.005){for(const dp of DWELL_POINTS){if(p.x>=dp.x&&p.x<dp.x+dp.w&&p.y>=dp.y&&p.y<dp.y+dp.h){p.dwelling=true;p.dwellTimer=20+Math.random()*40;break;}}}}
+    for(const b of B){if(p.x>=b.x&&p.x<b.x+b.w&&p.y>=b.y&&p.y<b.y+b.h){const dL=p.x-b.x,dR=b.x+b.w-p.x,dT=p.y-b.y,dB=b.y+b.h-p.y,mn=Math.min(dL,dR,dT,dB);if(mn===dL)p.x=b.x-.5;else if(mn===dR)p.x=b.x+b.w+.5;else if(mn===dT)p.y=b.y-.5;else p.y=b.y+b.h+.5;}}
+    const z=Z.find(zz=>zz.id===p.zid);if(z){p.x=Math.max(z.x,Math.min(z.x+z.w,p.x));p.y=Math.max(z.y,Math.min(z.y+z.h,p.y));}
+    p.life-=.15;if(p.life<0){if(z){const pos=randInZone(z);p.x=pos.x;p.y=pos.y;}p.life=80+Math.random()*160;}
+    const[cx2,cy2]=tx(p.x,p.y);
+    const alpha=Math.min(.8,.35+density*.3),radius=density>1?3:density>.5?2.5:2;
+    ctx.fillStyle=p.col+alpha+')';ctx.beginPath();ctx.arc(cx2,cy2,radius,0,6.28);ctx.fill();
+    if(density>.8){ctx.fillStyle=p.col+(alpha*.15)+')';ctx.beginPath();ctx.arc(cx2,cy2,radius+2,0,6.28);ctx.fill();}
+  });
+}
+
+// ===================== SIDEBAR =====================
+function updateUI(s){
+  const occ=document.getElementById('mOcc');occ.textContent=s.inv.toLocaleString()+'人';
+  occ.className='row-v '+(s.inv>2500?'red':s.inv>1800?'orange':s.inv>1000?'yellow':'green');
+  document.getElementById('mOccSub').textContent=`ピーク${pkOcc.toLocaleString()}人の${Math.round(s.inv/pkOcc*100)}%`;
+  const ir=document.getElementById('mIn');ir.textContent=Math.round(s.entR)+'人/分';
+  ir.className='row-v '+(s.entR>ENTRY_CAP?'red':s.entR>ENTRY_CAP*.7?'orange':'green');
+  document.getElementById('mOut').textContent=Math.round(s.exR)+'人/分';
+  const azs=Z.filter(z=>z.id!=='rest_stage'),tA=azs.reduce((a,z)=>a+z.w*z.h,0),tP=azs.reduce((a,z)=>a+(s.zo[z.id]?.p||0),0),ad=tP/tA;
+  const de=document.getElementById('mDens');de.textContent=ad.toFixed(2)+'人/m²';
+  de.className='row-v '+(ad>1.5?'red':ad>1?'orange':ad>.5?'yellow':'green');
+  const bar=document.getElementById('mBar');bar.style.width=Math.min(100,ad/2.5*100)+'%';bar.style.background=dcs(ad);
+  const qe=document.getElementById('mQ');
+  if(s.q>10){qe.textContent=`約${s.q}人 (${Math.round(s.q/ENTRY_CAP)}分待ち)`;qe.className='row-v '+(s.q>100?'red':'orange');}else{qe.textContent='なし';qe.className='row-v green';}
+  document.getElementById('arrived').textContent=`到着 ${s.cum.toLocaleString()} / ${(RUNNERS+VISITORS).toLocaleString()}`;
+
+  const zl=document.getElementById('zoneList');zl.innerHTML='';
+  Z.forEach(z=>{const d=s.zo[z.id];if(!d)return;zl.innerHTML+=`<div class="zone-item"><div class="zone-dot" style="background:${dcs(d.d)}"></div><span class="zone-nm">${z.nm}</span><span class="zone-d">${d.d.toFixed(2)}人/m²</span><span class="zone-n" style="color:${dcs(d.d)}">${d.p}人</span></div>`;});
+
+  const ae=document.getElementById('alerts');ae.innerHTML='';const al=[];
+  if(s.entU>.85){al.push({c:'r',t:`入口渋滞 — 負荷${Math.round(s.entU*100)}%`,x:`到着${Math.round(s.entR)}人/分 vs 処理${ENTRY_CAP}人/分。推定${Math.round(s.q/ENTRY_CAP)}分待ち。`});}
+  if(s.zo.center_mid?.d>.8)al.push({c:'y',t:`ブース中段混雑 — ${s.zo.center_mid.d.toFixed(1)}人/m²`,x:`${s.zo.center_mid.p}人がフォトクリエイト〜漫画ミュージアム周辺に集中。`});
+  if(s.zo.center_south?.d>.8)al.push({c:'y',t:`南側通路混雑 — ${s.zo.center_south.d.toFixed(1)}人/m²`,x:`トヨタカローラ/アルペン前に${s.zo.center_south.p}人。くじ引き・買い物で滞留。`});
+  if(s.inv>2000)al.push({c:'r',t:'会場収容限界接近',x:`同時${s.inv.toLocaleString()}人。避難時の安全確保が困難な密度。`});
+  if(!al.length)ae.innerHTML='<div style="color:#475569;font-size:11px;padding:6px 0">現在、重大な警告なし</div>';
+  else al.forEach(a=>{ae.innerHTML+=`<div class="alert alert-${a.c}"><div class="alert-t">${a.t}</div><div class="alert-x">${a.x}</div></div>`;});
+
+  const te=document.getElementById('tips');te.innerHTML='';const tp=[];
+  if(s.entU>.6||s.q>20)tp.push({t:'入口拡幅 + 記録証分離',x:'入口を8〜10mに拡幅し、記録証発行を別ブースへ分離。入口スループット70%向上。'});
+  if(s.zo.center_mid?.d>.6)tp.push({t:'中段ブースの動線分離',x:'通過者とブース立ち寄り者の動線を分離。ブース前に並び列スペースを確保。'});
+  if(s.inv>1500)tp.push({t:'出口の2系統化',x:'「入口専用」ゲートを午後は出口にも開放。退場処理能力2倍。'});
+  tp.push({t:'ピーク時の速達ルート',x:'13:00〜14:30は「荷物受取→即退場」の専用レーンを設置。滞在10分以下でピーク人数40%削減。'});
+  if(s.zo.rest_stage?.d>.4)tp.push({t:'休憩席の増設',x:'180席では不足。南側ブース前に仮設ベンチ200席追加を推奨。'});
+  tp.forEach(t=>{te.innerHTML+=`<div class="alert alert-b"><div class="alert-t">💡 ${t.t}</div><div class="alert-x">${t.x}</div></div>`;});
+  document.getElementById('liveBadge').style.display=playing?'inline-block':'none';
+}
+
+// ===================== CHART =====================
+function drawChart(ct){
+  const c=document.getElementById('chartC'),x2=c.getContext('2d');
+  c.width=c.clientWidth*DPR;c.height=c.clientHeight*DPR;
+  x2.setTransform(DPR,0,0,DPR,0,0);
+  const w=c.clientWidth,h=c.clientHeight;x2.clearRect(0,0,w,h);
+  const mR=Math.max(...AD.map(d=>d.total)),mO=Math.max(...OD);
+  const p={l:32,r:32,t:5,b:18},cw=w-p.l-p.r,ch=h-p.t-p.b;
+  x2.strokeStyle='#111827';x2.lineWidth=.5;
+  for(let i=0;i<=4;i++){const y=p.t+ch*i/4;x2.beginPath();x2.moveTo(p.l,y);x2.lineTo(w-p.r,y);x2.stroke();}
+  // Rate area fill
+  x2.beginPath();x2.moveTo(p.l,p.t+ch);AD.forEach(d=>{x2.lineTo(p.l+(d.t/SIMDUR)*cw,p.t+ch-(d.total/mR)*ch);});x2.lineTo(p.l+cw,p.t+ch);x2.closePath();
+  const g=x2.createLinearGradient(0,p.t,0,p.t+ch);g.addColorStop(0,'rgba(59,130,246,.25)');g.addColorStop(1,'rgba(59,130,246,.02)');x2.fillStyle=g;x2.fill();
+  // Rate line
+  x2.beginPath();AD.forEach((d,i)=>{const xx=p.l+(d.t/SIMDUR)*cw,yy=p.t+ch-(d.total/mR)*ch;i?x2.lineTo(xx,yy):x2.moveTo(xx,yy);});x2.strokeStyle='#3b82f6';x2.lineWidth=1.5;x2.stroke();
+  // Occ line
+  x2.beginPath();OD.forEach((o,t)=>{const xx=p.l+(t/SIMDUR)*cw,yy=p.t+ch-(o/mO)*ch;t?x2.lineTo(xx,yy):x2.moveTo(xx,yy);});x2.strokeStyle='#f97316';x2.lineWidth=1.5;x2.stroke();
+  // Danger line
+  if(mO>2000){const dy=p.t+ch-(2000/mO)*ch;x2.strokeStyle='rgba(239,68,68,.3)';x2.lineWidth=1;x2.setLineDash([4,4]);x2.beginPath();x2.moveTo(p.l,dy);x2.lineTo(w-p.r,dy);x2.stroke();x2.setLineDash([]);x2.fillStyle='rgba(239,68,68,.5)';x2.font="9px sans-serif";x2.textAlign='right';x2.fillText('危険',w-p.r-2,dy-2);}
+  // Now line
+  const nx=p.l+(ct/SIMDUR)*cw;x2.strokeStyle='#ef4444';x2.lineWidth=1.5;x2.setLineDash([3,3]);x2.beginPath();x2.moveTo(nx,p.t);x2.lineTo(nx,p.t+ch);x2.stroke();x2.setLineDash([]);
+  // X labels
+  x2.fillStyle='#475569';x2.font="10px sans-serif";x2.textAlign='center';
+  ['11:10','12:00','13:00','14:00','15:00','16:00','16:30'].forEach((l,i)=>{const ts=[0,50,110,170,230,290,320];x2.fillText(l,p.l+(ts[i]/SIMDUR)*cw,h-3);});
+  x2.textAlign='right';x2.fillStyle='#3b82f6';x2.fillText(Math.round(mR)+'人/分',p.l-2,p.t+10);
+  x2.textAlign='left';x2.fillStyle='#f97316';x2.fillText(Math.round(mO)+'人',w-p.r+2,p.t+10);
+}
+
+// ===================== PEAKS =====================
+let pkOcc=0,pkT=0,pkR=0,pkRT=0;
+function peaks(){
+  for(let t=0;t<=SIMDUR;t++){if(OD[t]>pkOcc){pkOcc=Math.round(OD[t]);pkT=t;}const r=AD[t]?.total||0;if(r>pkR){pkR=r;pkRT=t;}}
+  const c1=SIM0+pkT,h1=Math.floor(c1/60),m1=c1%60;
+  const c2=SIM0+pkRT,h2=Math.floor(c2/60),m2=c2%60;
+  const aZ=Z.filter(z=>z.id!=='rest_stage'),aA=aZ.reduce((a,z)=>a+z.w*z.h,0),pD=(pkOcc*.73)/aA;
+  const cmZ=Z.find(z=>z.id==='center_mid'),cmP=Math.round(pkOcc*.25),cmD=cmP/(cmZ.w*cmZ.h);
+  const csZ=Z.find(z=>z.id==='center_south'),csP=Math.round(pkOcc*.20),csD=csP/(csZ.w*csZ.h);
+  document.getElementById('peakBox').innerHTML=`<h3>⚡ ピーク分析</h3><p>
+    <strong>場内ピーク:</strong> ${h1}:${String(Math.floor(m1)).padStart(2,'0')}頃 — 約${pkOcc.toLocaleString()}人同時滞在<br>
+    <strong>到着ピーク:</strong> ${h2}:${String(Math.floor(m2)).padStart(2,'0')}頃 — ${Math.round(pkR)}人/分<br>
+    <strong>通路密度:</strong> ピーク時 約${pD.toFixed(1)}人/m²${pD>1.5?' ⚠危険':pD>1?' ⚠注意':''}<br>
+    <strong>ブース中段:</strong> 約${cmP}人 (${cmD.toFixed(1)}人/m²)${cmD>1?' ⚠注意':''}<br>
+    <strong>南側(トヨタ/アルペン前):</strong> 約${csP}人 (${csD.toFixed(1)}人/m²)${csD>1?' ⚠注意':''}<br>
+    <strong>入口:</strong> ピーク${Math.round(pkR)}人/分 vs 処理${ENTRY_CAP}人/分 → ${pkR>ENTRY_CAP?'🔴待ち行列発生':'✅処理可能'}</p>`;
+}
+
+// ===================== CONTROLS =====================
+let curT=0,playing=false,spd=1,af=null,lastT=0;
+function toggle(){playing=!playing;const b=document.getElementById('playBtn');if(playing){b.textContent='⏸ 停止';b.classList.add('on');lastT=performance.now();anim();}else{b.textContent='▶ 再生';b.classList.remove('on');if(af)cancelAnimationFrame(af);}}
+function setSpd(s){spd=s;document.querySelectorAll('#spdGroup button').forEach(b=>{b.classList.toggle('on',parseInt(b.textContent.replace('×',''))===s);});}
+function anim(){if(!playing)return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;curT+=dt*spd*.5;if(curT>SIMDUR){curT=SIMDUR;playing=false;document.getElementById('playBtn').textContent='▶ 再生';document.getElementById('playBtn').classList.remove('on');}document.getElementById('slider').value=curT;upd(curT);af=requestAnimationFrame(anim);}
+function seek(v){curT=parseFloat(v);upd(curT);}
+function upd(t){const c=SIM0+t,hh=Math.floor(c/60),mm=Math.floor(c%60);document.getElementById('clock').textContent=`${hh}:${String(mm).padStart(2,'0')}`;const s=sim(t);draw(s);updateUI(s);drawChart(t);}
+
+// ===================== INIT =====================
+window.addEventListener('resize',()=>{resize();upd(curT);});
+resize();peaks();upd(0);
+</script>
+</body>
+</html>
