@@ -4,86 +4,194 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>北九州マラソン2026 EXPO 混雑シミュレーション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Helvetica Neue',Arial,'Hiragino Sans',sans-serif;background:#0a0e1a;color:#e2e8f0;overflow-x:hidden}
+body{font-family:'Noto Sans JP','Helvetica Neue',Arial,sans-serif;background:#080c16;color:#e2e8f0;overflow-x:hidden}
 
-.header{background:linear-gradient(135deg,#111827,#1e293b);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #2563eb;flex-wrap:wrap;gap:8px}
-.header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
-.header .sub{font-size:12px;color:#64748b;margin-top:2px}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
-.badge-live{background:#ef4444;color:#fff;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+/* ===== HEADER ===== */
+.header{
+  background:linear-gradient(135deg,#0f172a 0%,#1a2340 100%);
+  padding:12px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid #2563eb;
+  flex-wrap:wrap;gap:8px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+.header h1{font-size:18px;font-weight:900;letter-spacing:-.5px;line-height:1.3}
+.header .sub{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4}
+.spd{display:flex;gap:3px}
+.spd button{
+  background:#1e293b;color:#94a3b8;border:1px solid #334155;
+  font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:700;
+  transition:all .15s;
+}
+.spd button.on{background:#2563eb;color:#fff;border-color:#3b82f6;box-shadow:0 0 12px rgba(37,99,235,.4)}
+.spd button:active{transform:scale(.95)}
 
-.layout{display:grid;grid-template-columns:1fr 380px;min-height:calc(100vh - 65px)}
-.left{padding:12px;display:flex;flex-direction:column;gap:8px}
-.right{background:#111827;border-left:2px solid #1e293b;padding:14px;overflow-y:auto;max-height:calc(100vh - 65px)}
+/* ===== LAYOUT ===== */
+.layout{display:grid;grid-template-columns:1fr 360px;min-height:calc(100vh - 56px)}
+.left{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.right{
+  background:linear-gradient(180deg,#0f172a,#0a0f1e);
+  border-left:1px solid #1e293b;
+  padding:14px;overflow-y:auto;max-height:calc(100vh - 56px);
+}
 
-.map-wrap{flex:1;background:#0d1321;border-radius:14px;overflow:hidden;border:1px solid #1e293b;position:relative}
+/* ===== MAP ===== */
+.map-wrap{
+  flex:1;background:#0b1120;border-radius:12px;overflow:hidden;
+  border:1px solid rgba(59,130,246,.15);position:relative;min-height:300px;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.3);
+}
 canvas{display:block;width:100%;cursor:crosshair}
 
-.ctrl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#111827;border-radius:10px;border:1px solid #1e293b;flex-wrap:wrap}
-.ctrl .time{font-size:28px;font-weight:800;color:#60a5fa;min-width:70px;font-variant-numeric:tabular-nums}
-.ctrl .slider{flex:1;min-width:100px}
-.ctrl input[type=range]{width:100%;height:8px;-webkit-appearance:none;background:#1e293b;border-radius:4px;outline:none}
-.ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#3b82f6;cursor:pointer;box-shadow:0 0 8px rgba(59,130,246,.5)}
-.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:all .15s}
-.btn-play{background:#2563eb;color:#fff;font-size:16px}
-.btn-play:hover{background:#1d4ed8}
-.btn-play.on{background:#dc2626}
-.spd{display:flex;gap:3px}
-.spd button{background:#1e293b;color:#94a3b8;border:1px solid #334155;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600}
-.spd button.on{background:#2563eb;color:#fff;border-color:#3b82f6}
-.arrived{font-size:13px;color:#94a3b8;white-space:nowrap}
+/* ===== STICKY CONTROL BAR ===== */
+.ctrl{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:linear-gradient(135deg,#111827,#0f172a);
+  border-radius:10px;border:1px solid #1e293b;
+  flex-wrap:wrap;
+  position:sticky;bottom:0;z-index:50;
+  box-shadow:0 -4px 20px rgba(0,0,0,.4);
+}
+.ctrl .time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:26px;font-weight:800;color:#60a5fa;
+  min-width:65px;font-variant-numeric:tabular-nums;
+}
+.ctrl .slider{flex:1;min-width:80px}
+.ctrl input[type=range]{
+  width:100%;height:6px;-webkit-appearance:none;
+  background:#1e293b;border-radius:3px;outline:none;
+}
+.ctrl input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#3b82f6;cursor:pointer;
+  box-shadow:0 0 10px rgba(59,130,246,.5);
+  transition:transform .1s;
+}
+.ctrl input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2)}
+.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:all .15s}
+.btn-play{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:15px;box-shadow:0 2px 12px rgba(37,99,235,.3)}
+.btn-play:hover{background:linear-gradient(135deg,#3b82f6,#2563eb);transform:translateY(-1px)}
+.btn-play:active{transform:translateY(0)}
+.btn-play.on{background:linear-gradient(135deg,#dc2626,#b91c1c);box-shadow:0 2px 12px rgba(220,38,38,.3)}
+.arrived{font-size:12px;color:#94a3b8;white-space:nowrap;font-weight:600}
 
-.card{background:#0d1321;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid #1e293b}
-.card-t{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+/* ===== CARDS ===== */
+.card{
+  background:linear-gradient(135deg,#0d1525,#0f1729);
+  border-radius:10px;padding:12px;margin-bottom:10px;
+  border:1px solid rgba(30,41,59,.8);
+  transition:border-color .2s;
+}
+.card:hover{border-color:rgba(59,130,246,.2)}
+.card-t{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
 .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
 .row-l{font-size:13px;color:#94a3b8}
-.row-v{font-size:18px;font-weight:800}
+.row-v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace}
 .green{color:#22c55e}.yellow{color:#eab308}.orange{color:#f97316}.red{color:#ef4444}.blue{color:#60a5fa}
 .row-sub{font-size:10px;color:#475569;text-align:right}
+.bar-bg{height:8px;border-radius:4px;background:#1e293b;margin-top:4px;overflow:hidden}
+.bar-fg{height:100%;border-radius:4px;transition:width .3s}
 
-.bar-bg{height:10px;border-radius:5px;background:#1e293b;margin-top:4px;overflow:hidden}
-.bar-fg{height:100%;border-radius:5px;transition:width .3s}
+/* ===== ZONES ===== */
+.zone-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(17,24,39,.6)}
+.zone-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.zone-nm{font-size:11px;color:#94a3b8;flex:1}
+.zone-d{font-size:10px;color:#64748b;min-width:55px;text-align:right}
+.zone-n{font-size:13px;font-weight:700;min-width:50px;text-align:right;font-family:'JetBrains Mono',monospace}
 
-.zone-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #111827}
-.zone-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
-.zone-nm{font-size:12px;color:#94a3b8;flex:1}
-.zone-d{font-size:11px;color:#64748b;min-width:60px;text-align:right}
-.zone-n{font-size:14px;font-weight:700;min-width:55px;text-align:right}
-
+/* ===== ALERTS ===== */
 .alert{border-radius:8px;padding:10px;margin-top:6px}
-.alert-r{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25)}
-.alert-y{background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.25)}
-.alert-b{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25)}
-.alert-t{font-weight:700;font-size:13px;margin-bottom:3px}
+.alert-r{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2)}
+.alert-y{background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2)}
+.alert-b{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2)}
+.alert-t{font-weight:700;font-size:12px;margin-bottom:3px}
 .alert-r .alert-t{color:#f87171}
 .alert-y .alert-t{color:#facc15}
 .alert-b .alert-t{color:#60a5fa}
-.alert-x{font-size:12px;line-height:1.5}
+.alert-x{font-size:11px;line-height:1.6}
 .alert-r .alert-x{color:#fca5a5}
 .alert-y .alert-x{color:#fde68a}
 .alert-b .alert-x{color:#93c5fd}
 
-.chart-box{width:100%;height:110px}
-
-.peak-box{background:linear-gradient(135deg,rgba(249,115,22,.1),rgba(239,68,68,.08));border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:12px;margin-bottom:10px}
-.peak-box h3{color:#fb923c;font-size:13px;font-weight:800;margin-bottom:6px}
-.peak-box p{font-size:12px;color:#fdba74;line-height:1.6}
+/* ===== PEAK BOX ===== */
+.peak-box{
+  background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(239,68,68,.05));
+  border:1px solid rgba(249,115,22,.25);
+  border-radius:10px;padding:12px;margin-bottom:10px;
+}
+.peak-box h3{color:#fb923c;font-size:12px;font-weight:800;margin-bottom:6px;letter-spacing:.5px}
+.peak-box p{font-size:11px;color:#fdba74;line-height:1.7}
 .peak-box strong{color:#fff}
 
+/* ===== PARAMS ===== */
 .params{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px}
 .params span{font-size:11px}
 .params .k{color:#475569}
-.params .v{color:#94a3b8;font-weight:600}
+.params .v{color:#94a3b8;font-weight:700}
 
+/* ===== CHART ===== */
+.chart-box{width:100%;height:110px}
+
+/* ===== LEGEND ===== */
 .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#64748b}
-.leg i{width:16px;height:10px;border-radius:2px;display:inline-block}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b}
+.leg i{width:14px;height:8px;border-radius:2px;display:inline-block}
+
+/* ===== BADGE ===== */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-live{background:#ef4444;color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;min-height:auto}
+  .right{
+    border-left:none;border-top:1px solid #1e293b;
+    max-height:none;overflow-y:visible;
+    padding:10px;
+  }
+  .left{padding:8px}
+  .map-wrap{min-height:55vw}
+  .header h1{font-size:16px}
+}
+@media(max-width:480px){
+  .header{padding:10px 12px}
+  .header h1{font-size:14px}
+  .header .sub{font-size:10px}
+  .layout{grid-template-columns:1fr}
+  .left{padding:6px}
+  .right{padding:8px}
+  .map-wrap{min-height:60vw;border-radius:8px}
+  .ctrl{padding:8px 10px;gap:6px;border-radius:8px}
+  .ctrl .time{font-size:20px;min-width:55px}
+  .btn-play{padding:8px 14px;font-size:13px}
+  .arrived{font-size:10px}
+  .card{padding:10px;margin-bottom:8px}
+  .row-v{font-size:16px}
+  .zone-nm{font-size:10px}
+  .zone-n{font-size:12px}
+  .peak-box p{font-size:10px}
+  .spd button{font-size:10px;padding:4px 8px}
+}
+
+/* Scrollbar */
+.right::-webkit-scrollbar{width:4px}
+.right::-webkit-scrollbar-track{background:transparent}
+.right::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px}
+.right::-webkit-scrollbar-thumb:hover{background:#334155}
 </style>
 </head>
 <body>
+
 <div class="header">
   <div>
     <h1>北九州マラソン2026 EXPO 混雑シミュレーション</h1>
@@ -104,10 +212,9 @@ canvas{display:block;width:100%;cursor:crosshair}
       <button class="btn btn-play" id="playBtn" onclick="toggle()">▶ 再生</button>
       <span class="time" id="clock">11:10</span>
       <div class="slider"><input type="range" id="slider" min="0" max="320" value="0" step="0.5" oninput="seek(this.value)"></div>
-      <span class="arrived" id="arrived">到着 0 / 10,000</span>
+      <span class="arrived" id="arrived">到着 0 / 11,000</span>
     </div>
   </div>
-
   <div class="right">
     <div class="card">
       <div class="card-t">シミュレーション条件</div>
@@ -162,802 +269,309 @@ canvas{display:block;width:100%;cursor:crosshair}
 </div>
 
 <script>
-// ===================== CONFIG =====================
-const RUNNERS = 10000;
-const VISITORS = 1000;
-const RACE_START = 540; // 9:00
-const TRANSIT_MEAN = 12; // mean 12 minutes from finish to EXPO
-const TRANSIT_SD = 5; // σ=5 (5-25 min range)
-const AVG_STAY = 17.5, STAY_SD = 5;
-const VISITOR_STAY = 35, VISITOR_SD = 10;
-const ENTRY_CAP = 90; // increased from 55 to 90 (5.5m gate more permissive)
-const EXIT_CAP = 100; // increased from 65 to 100
-const SIM0 = 670; // 11:10
-const SIMDUR = 320; // 11:10 + 320分 = 16:30
-
-// ===================== VENUE (y=0 at TOP, matching PDF) =====================
-// Coordinates in meters, origin at top-left of venue
-const VW = 115, VH = 78;
-const canvas = document.getElementById('C');
-const ctx = canvas.getContext('2d');
-const DPR = Math.min(window.devicePixelRatio||1, 2);
-let S, OX, OY;
+const RUNNERS=10000,VISITORS=1000,RACE_START=540,TRANSIT_MEAN=12,TRANSIT_SD=5;
+const AVG_STAY=17.5,STAY_SD=5,VISITOR_STAY=35,VISITOR_SD=10;
+const ENTRY_CAP=90,EXIT_CAP=100,SIM0=670,SIMDUR=320;
+const VW=115,VH=78;
+const canvas=document.getElementById('C');
+const ctx=canvas.getContext('2d');
+const DPR=Math.min(window.devicePixelRatio||1,2);
+let S,OX,OY;
 
 function resize(){
-  const w = canvas.parentElement.clientWidth;
-  const h = Math.min(w * VH/VW + 20, window.innerHeight - 160);
-  canvas.width = w*DPR; canvas.height = h*DPR;
-  canvas.style.height = h+'px';
+  const w=canvas.parentElement.clientWidth;
+  const h=Math.min(w*VH/VW+20,window.innerHeight-140);
+  canvas.width=w*DPR;canvas.height=h*DPR;
+  canvas.style.height=h+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  S = (w-30)/VW; OX=15; OY=10;
+  S=(w-30)/VW;OX=15;OY=10;
 }
-function tx(x,y){ return [OX+x*S, OY+y*S]; }
+function tx(x,y){return[OX+x*S,OY+y*S]}
 
-// Zones: 人が実際に滞留するエリアのみ定義
-// ※ 出口専用・入口専用・総合案内・ロビー(y:0-22, x:22-65) は屋外/ホワイエで滞留ゼロ → ゾーン定義なし
-const Z = [
-  {id:'left_aisle',   nm:'左側通路(下関/北九州〜ボートレース間)', x:2, y:31, w:20, h:12},
-  {id:'mizuno_front',  nm:'ミズノ〜ブース間通路',  x:28, y:32, w:42, h:8},
-  {id:'center_mid',   nm:'ブース中段通路',        x:22, y:40, w:58, h:12},
-  {id:'center_south', nm:'南側通路(トヨタカローラ/アルペン前)', x:22, y:52, w:56, h:8},
-  {id:'right_aisle',  nm:'右側通路(映画祭〜180席間)', x:78, y:40, w:10, h:12},
-  {id:'entry_area',   nm:'入口・記録証エリア',     x:2,  y:54, w:20, h:20},
-  {id:'rest_stage',   nm:'休憩エリア (180席)',    x:88, y:38, w:14, h:12},
+const Z=[
+  {id:'left_aisle',nm:'左側通路(下関/北九州〜ボートレース間)',x:2,y:31,w:20,h:12},
+  {id:'mizuno_front',nm:'ミズノ〜ブース間通路',x:28,y:32,w:42,h:8},
+  {id:'center_mid',nm:'ブース中段通路',x:22,y:40,w:58,h:12},
+  {id:'center_south',nm:'南側通路(トヨタカローラ/アルペン前)',x:22,y:52,w:56,h:8},
+  {id:'right_aisle',nm:'右側通路(映画祭〜180席間)',x:78,y:40,w:10,h:12},
+  {id:'entry_area',nm:'入口・記録証エリア',x:2,y:54,w:20,h:20},
+  {id:'rest_stage',nm:'休憩エリア (180席)',x:88,y:38,w:14,h:12},
 ];
 
-// Booths (y-down coords matching PDF)
-const B = [
-  {nm:'出口専用',       x:48, y:3,  w:12, h:5,  c:'#ef4444'},
-  {nm:'入口専用',       x:33, y:3,  w:12, h:5,  c:'#22c55e'},
-  {nm:'総合案内',       x:33, y:14, w:12, h:5,  c:'#a855f7'},
-  {nm:'ミズノ',         x:28, y:22, w:38, h:10, c:'#3b82f6'},
-  {nm:'佐川急便',       x:76, y:22, w:10, h:6,  c:'#f97316'},
-  {nm:'荷物置き',       x:87, y:22, w:10, h:6,  c:'#f97316'},
-  {nm:'下関海響\nマラソン',x:4,y:24, w:8,  h:7,  c:'#8b5cf6'},
-  {nm:'北九州\nマラソン', x:13, y:24, w:8,  h:7,  c:'#8b5cf6'},
-  {nm:'フォトクリエイト',  x:24, y:40, w:9,  h:6,  c:'#06b6d4'},
-  {nm:'日本マクドナルド',  x:24, y:47, w:10, h:5,  c:'#eab308'},
-  {nm:'ギミック',        x:35, y:47, w:7,  h:5,  c:'#06b6d4'},
-  {nm:'第一生命保険',     x:43, y:47, w:10, h:5,  c:'#06b6d4'},
-  {nm:'若鶴酒造',        x:34, y:40, w:7,  h:6,  c:'#06b6d4'},
-  {nm:'鞍和スチール',     x:42, y:40, w:7,  h:6,  c:'#06b6d4'},
-  {nm:'パン工房 櫟',     x:50, y:40, w:7,  h:6,  c:'#06b6d4'},
+const B=[
+  {nm:'出口専用',x:48,y:3,w:12,h:5,c:'#ef4444'},
+  {nm:'入口専用',x:33,y:3,w:12,h:5,c:'#22c55e'},
+  {nm:'総合案内',x:33,y:14,w:12,h:5,c:'#a855f7'},
+  {nm:'ミズノ',x:28,y:22,w:38,h:10,c:'#3b82f6'},
+  {nm:'佐川急便',x:76,y:22,w:10,h:6,c:'#f97316'},
+  {nm:'荷物置き',x:87,y:22,w:10,h:6,c:'#f97316'},
+  {nm:'下関海響\nマラソン',x:4,y:24,w:8,h:7,c:'#8b5cf6'},
+  {nm:'北九州\nマラソン',x:13,y:24,w:8,h:7,c:'#8b5cf6'},
+  {nm:'フォトクリエイト',x:24,y:40,w:9,h:6,c:'#06b6d4'},
+  {nm:'日本マクドナルド',x:24,y:47,w:10,h:5,c:'#eab308'},
+  {nm:'ギミック',x:35,y:47,w:7,h:5,c:'#06b6d4'},
+  {nm:'第一生命保険',x:43,y:47,w:10,h:5,c:'#06b6d4'},
+  {nm:'若鶴酒造',x:34,y:40,w:7,h:6,c:'#06b6d4'},
+  {nm:'鞍和スチール',x:42,y:40,w:7,h:6,c:'#06b6d4'},
+  {nm:'パン工房 櫟',x:50,y:40,w:7,h:6,c:'#06b6d4'},
   {nm:'北九州観光\nコンベンション',x:58,y:40,w:10,h:6,c:'#06b6d4'},
-  {nm:'三井製糖',        x:54, y:47, w:6,  h:5,  c:'#06b6d4'},
-  {nm:'ぬかだき',        x:61, y:47, w:7,  h:5,  c:'#06b6d4'},
-  {nm:'ゼンリン',        x:69, y:47, w:7,  h:5,  c:'#06b6d4'},
+  {nm:'三井製糖',x:54,y:47,w:6,h:5,c:'#06b6d4'},
+  {nm:'ぬかだき',x:61,y:47,w:7,h:5,c:'#06b6d4'},
+  {nm:'ゼンリン',x:69,y:47,w:7,h:5,c:'#06b6d4'},
   {nm:'北九州市\n漫画ミュージアム',x:69,y:40,w:10,h:6,c:'#06b6d4'},
-  {nm:'北九州国際\n映画祭', x:76, y:47, w:8, h:5, c:'#06b6d4'},
-  {nm:'ボートレース若松',  x:4,  y:40, w:18, h:10,c:'#6366f1'},
-  {nm:'トヨタカローラ博多',x:22, y:60, w:18, h:7, c:'#22c55e'},
-  {nm:'アルペン',        x:44, y:60, w:16, h:7, c:'#22c55e'},
-  {nm:'大英産業',        x:64, y:60, w:14, h:7, c:'#22c55e'},
-  {nm:'180席',          x:88, y:40, w:14, h:10, c:'#475569'},
-  {nm:'ステージ',        x:102, y:40, w:8, h:10, c:'#475569'},
-  {nm:'日本陸連\n記録証発行',x:3,y:56,w:14,h:6, c:'#ec4899'},
-  {nm:'ランナー\n路辞サイン',x:3,y:63,w:10,h:5, c:'#ec4899'},
+  {nm:'北九州国際\n映画祭',x:76,y:47,w:8,h:5,c:'#06b6d4'},
+  {nm:'ボートレース若松',x:4,y:40,w:18,h:10,c:'#6366f1'},
+  {nm:'トヨタカローラ博多',x:22,y:60,w:18,h:7,c:'#22c55e'},
+  {nm:'アルペン',x:44,y:60,w:16,h:7,c:'#22c55e'},
+  {nm:'大英産業',x:64,y:60,w:14,h:7,c:'#22c55e'},
+  {nm:'180席',x:88,y:40,w:14,h:10,c:'#475569'},
+  {nm:'ステージ',x:102,y:40,w:8,h:10,c:'#475569'},
+  {nm:'日本陸連\n記録証発行',x:3,y:56,w:14,h:6,c:'#ec4899'},
+  {nm:'ランナー\n路辞サイン',x:3,y:63,w:10,h:5,c:'#ec4899'},
 ];
 
-// ===================== CORRIDOR DEFINITION =====================
-// Define walkable corridors as polygons/rectangles
-// Particles will be confined to these areas
-const CORRIDORS = [
-  // 1. Bottom entry area (wide, below all booths)
-  {x:0, y:68, w:22, h:10},
-  // 2. Left side: record cert / signs area (walkable between booths)
-  {x:0, y:52, w:22, h:16},
-  // 3. Left aisle: between 下関/北九州マラソン row and ボートレース若松
-  {x:0, y:31, w:22, h:12},
-  // 4. Center horizontal corridor (between ミズノ row and mid booths)
-  {x:22, y:32, w:48, h:8},
-  // 5. Center mid booths area (browsing area)
-  {x:22, y:40, w:58, h:12},
-  // 6. Right aisle (toward rest area)
-  {x:68, y:32, w:8, h:22},
-  // 7. 180席休憩エリア（ステージは含まない）
-  {x:78, y:38, w:24, h:14},
-  // 8. South corridor (between mid and south booth rows)
-  {x:22, y:52, w:56, h:8},
-  // ※ 出口専用・入口専用・総合案内・ロビー(y:0-22)は全て通過のみ → コリドーなし（パーティクル配置しない）
+const FP_LEFT=[{x:10,y:74},{x:10,y:60},{x:10,y:36},{x:35,y:35},{x:55,y:35},{x:55,y:19},{x:45,y:12},{x:50,y:4}];
+const FP_RIGHT=[{x:10,y:74},{x:10,y:60},{x:10,y:53},{x:35,y:53},{x:55,y:53},{x:68,y:35},{x:45,y:19},{x:45,y:12},{x:50,y:4}];
+
+const DWELL_POINTS=[
+  {x:22,y:57,w:18,h:3},{x:44,y:57,w:16,h:3},{x:64,y:57,w:14,h:3},
+  {x:28,y:32,w:38,h:3},{x:24,y:46,w:9,h:2},{x:24,y:52,w:10,h:2},
+  {x:4,y:38,w:18,h:2},{x:85,y:38,w:16,h:10},
 ];
 
-function isInCorridor(x, y) {
-  return CORRIDORS.some(c => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h);
-}
-
-function pushOutOfBooth(x, y) {
-  // Check if point is inside any booth, if so push to nearest corridor
-  for (let booth of B) {
-    if (x >= booth.x && x < booth.x + booth.w && y >= booth.y && y < booth.y + booth.h) {
-      // Inside booth, find nearest corridor edge and push out
-      let minDist = Infinity;
-      let newX = x, newY = y;
-
-      for (let corr of CORRIDORS) {
-        // Check all four edges of corridor
-        const edges = [
-          {sx: corr.x, sy: corr.y, ex: corr.x + corr.w, ey: corr.y, edge: 'top'},
-          {sx: corr.x, sy: corr.y + corr.h, ex: corr.x + corr.w, ey: corr.y + corr.h, edge: 'bottom'},
-          {sx: corr.x, sy: corr.y, ex: corr.x, ey: corr.y + corr.h, edge: 'left'},
-          {sx: corr.x + corr.w, sy: corr.y, ex: corr.x + corr.w, ey: corr.y + corr.h, edge: 'right'},
-        ];
-
-        for (let edge of edges) {
-          let px, py, dist;
-          if (edge.edge === 'top' || edge.edge === 'bottom') {
-            py = edge.sy;
-            px = Math.max(edge.sx, Math.min(edge.ex, x));
-          } else {
-            px = edge.sx;
-            py = Math.max(edge.sy, Math.min(edge.ey, y));
-          }
-          dist = Math.hypot(px - x, py - y);
-          if (dist < minDist) {
-            minDist = dist;
-            newX = px;
-            newY = py;
-          }
-        }
-      }
-      return {x: newX, y: newY};
-    }
-  }
-  return {x, y};
-}
-
-// ランナー左ルート(50%): 入口→左通路→北九州/下関マラソン→中央通路→上部通路→出口
-// ※ 下関/北九州マラソンの上はロビー(壁+トイレ)で通行不可のため、中央通路経由
-const FP_LEFT = [
-  {x:10, y:74},  // entry bottom-left
-  {x:10, y:60},  // going up left side
-  {x:10, y:36},  // left aisle (北九州/下関マラソンエリア)
-  {x:35, y:35},  // center corridor (中央通路へ合流)
-  {x:55, y:35},  // center corridor を東へ
-  {x:55, y:19},  // upper corridor (ミズノ上の通路)
-  {x:45, y:12},  // exit corridor
-  {x:50, y:4}    // exit gate
-];
-
-// ランナー右ルート(50%): 入口→南側ブース(トヨタカローラ/アルペン)→中央通路→出口
-const FP_RIGHT = [
-  {x:10, y:74},  // entry bottom-left
-  {x:10, y:60},  // going up left side
-  {x:10, y:53},  // south corridor approach
-  {x:35, y:53},  // south corridor (トヨタカローラ前)
-  {x:55, y:53},  // south corridor (アルペン前)
-  {x:68, y:35},  // right aisle → center
-  {x:45, y:19},  // upper corridor
-  {x:45, y:12},  // exit corridor
-  {x:50, y:4}    // exit gate
-];
-
-// 一般来場者パス (出入口から入り、ブース巡回)
-const VP = [
-  {x:50, y:4},   // enter at exit gate area
-  {x:42, y:12},  // exit corridor
-  {x:35, y:19},  // upper corridor
-  {x:40, y:35},  // center corridor
-  {x:55, y:53},  // south corridor
-  {x:35, y:35},  // back to center
-  {x:50, y:4}    // exit
-];
-
-// ===================== ARRIVAL MODEL (WITH TRANSIT CONVOLUTION) =====================
+// ===================== ARRIVAL MODEL =====================
 function gpdf(x,m,s){return Math.exp(-.5*((x-m)/s)**2)/(s*2.5066)}
-
 function finishPDF(rm){
   if(rm<125||rm>370)return 0;
-  return .03*RUNNERS*gpdf(rm,145,12)+.12*RUNNERS*gpdf(rm,200,18)+
-    .18*RUNNERS*gpdf(rm,228,15)+.22*RUNNERS*gpdf(rm,255,15)+
-    .18*RUNNERS*gpdf(rm,285,15)+.15*RUNNERS*gpdf(rm,315,15)+
-    .12*RUNNERS*gpdf(rm,345,12);
+  return .03*RUNNERS*gpdf(rm,145,12)+.12*RUNNERS*gpdf(rm,200,18)+.18*RUNNERS*gpdf(rm,228,15)+.22*RUNNERS*gpdf(rm,255,15)+.18*RUNNERS*gpdf(rm,285,15)+.15*RUNNERS*gpdf(rm,315,15)+.12*RUNNERS*gpdf(rm,345,12);
 }
-
-// Convolve finish times with transit time distribution (normal dist: mean=12, σ=5)
 function runnerRate(t){
-  const clock = SIM0 + t;
-  const TRANSIT_RANGE = 30; // sample ±3σ
-  let rate = 0;
-  for (let transit_offset = -TRANSIT_RANGE; transit_offset <= TRANSIT_RANGE; transit_offset += 0.5) {
-    const finish_time = clock - RACE_START - TRANSIT_MEAN - transit_offset;
-    const weight = gpdf(transit_offset, 0, TRANSIT_SD);
-    rate += finishPDF(finish_time) * weight * 0.5; // 0.5 for dt step
-  }
+  const clock=SIM0+t;let rate=0;
+  for(let o=-30;o<=30;o+=.5){rate+=finishPDF(clock-RACE_START-TRANSIT_MEAN-o)*gpdf(o,0,TRANSIT_SD)*.5;}
   return rate;
 }
+function visitorRate(t){const clock=SIM0+t;if(clock<660||clock>960)return 0;return VISITORS*gpdf(t,110,60);}
 
-// Visitors: arrive matching runner pattern but spread more
-function visitorRate(t){
-  const clock = SIM0 + t;
-  if(clock < 11*60 || clock > 16*60) return 0;
-  // gentle bell curve centered at 13:00, wider spread
-  return VISITORS * gpdf(t, 110, 60);
-}
-
-// Pre-compute arrival and occupancy data
-const AD = [], OD = [];
-let cumA = 0;
-for(let t = 0; t <= SIMDUR; t++){
-  const rr = runnerRate(t), vr = visitorRate(t), tot = rr + vr;
-  cumA += tot;
-  AD.push({t, rr, vr, total: tot, cum: Math.min(cumA, RUNNERS + VISITORS)});
-}
-
+const AD=[],OD=[];let cumA=0;
+for(let t=0;t<=SIMDUR;t++){const rr=runnerRate(t),vr=visitorRate(t),tot=rr+vr;cumA+=tot;AD.push({t,rr,vr,total:tot,cum:Math.min(cumA,RUNNERS+VISITORS)});}
 function ncdf(x,m,s){return .5*(1+erf2((x-m)/(s*1.4142)))}
 function erf2(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+.3275911*x);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x))}
-
-for(let t = 0; t <= SIMDUR; t++){
-  let inv = 0;
-  const lb = Math.ceil(Math.max(AVG_STAY, VISITOR_STAY) + 3*Math.max(STAY_SD, VISITOR_SD));
-  for(let i = Math.max(0, t - lb); i <= t; i++){
-    const d = AD[i];
-    if(!d) continue;
-    const el = t - i;
-    inv += d.rr * (1 - ncdf(el, AVG_STAY, STAY_SD));
-    inv += d.vr * (1 - ncdf(el, VISITOR_STAY, VISITOR_SD));
-  }
-  // 16:00以降は閉場フェードアウト
-  const odClock = SIM0 + t;
-  if(odClock >= 960){
-    inv *= Math.max(0, 1 - (odClock - 960) / 30);
-  }
-  OD.push(Math.max(0, inv));
+for(let t=0;t<=SIMDUR;t++){
+  let inv=0;const lb=Math.ceil(Math.max(AVG_STAY,VISITOR_STAY)+3*Math.max(STAY_SD,VISITOR_SD));
+  for(let i=Math.max(0,t-lb);i<=t;i++){const d=AD[i];if(!d)continue;const el=t-i;inv+=d.rr*(1-ncdf(el,AVG_STAY,STAY_SD));inv+=d.vr*(1-ncdf(el,VISITOR_STAY,VISITOR_SD));}
+  if(SIM0+t>=960)inv*=Math.max(0,1-(SIM0+t-960)/30);
+  OD.push(Math.max(0,inv));
 }
 
 // ===================== SIMULATION =====================
 function sim(t){
-  let inv = 0;
-  const entR = runnerRate(t) + visitorRate(t);
-  const lb = 45;
-  for(let i = Math.max(0, Math.floor(t - lb)); i <= Math.min(SIMDUR, Math.floor(t)); i++){
-    const d = AD[i];
-    if(!d) continue;
-    const el = t - i;
-    inv += d.rr * Math.max(0, 1 - ncdf(el, AVG_STAY, STAY_SD));
-    inv += d.vr * Math.max(0, 1 - ncdf(el, VISITOR_STAY, VISITOR_SD));
-  }
-  // 16:00以降は閉場 → 16:30までに全員退場（線形フェードアウト）
-  const closeClock = SIM0 + t;
-  if(closeClock >= 960){
-    const fadeRatio = Math.max(0, 1 - (closeClock - 960) / 30); // 960(16:00)→990(16:30)で0に
-    inv *= fadeRatio;
-  }
-  const exR = runnerRate(Math.max(0, t - AVG_STAY)) + visitorRate(Math.max(0, t - VISITOR_STAY));
-  // Queue - now less likely with smoother arrival pattern
-  let q = 0;
-  const rr = runnerRate(t);
-  if(rr > ENTRY_CAP){
-    for(let i = Math.max(0, Math.floor(t - 30)); i <= Math.floor(t); i++){
-      const r2 = runnerRate(i);
-      if(r2 > ENTRY_CAP) q += r2 - ENTRY_CAP;
-      else q = Math.max(0, q - (ENTRY_CAP - r2));
-    }
-  }
-  // Zone distribution
-  const zo = {};
-  Z.forEach(z => {
-    let f = 0;
-    switch(z.id){
-      case'entry_area':f=.15;break;    // 入口〜記録証発行
-      case'left_aisle':f=.13;break;    // 下関/北九州マラソン〜ボートレース間
-      case'mizuno_front':f=.08;break;  // ミズノ前通路（通過メイン）
-      case'center_mid':f=.25;break;    // ブース中段（フォトクリエイト〜漫画ミュージアム＋買い物）
-      case'center_south':f=.20;break;  // トヨタカローラ/アルペン前（くじ引き・買い物）
-      case'right_aisle':f=.05;break;   // 右側通路
-      case'rest_stage':f=.14;break;    // 休憩180席
-    }
-    let p = inv * f;
-    // 180席エリア: 15:00〜16:00は前田香織トークショーで180人満席、それ以外は150人キャップ
-    if(z.id === 'rest_stage'){
-      const clock = SIM0 + t;
-      if(clock >= 900 && clock <= 960){
-        // 15:00〜16:00: トークショー時間帯 → 180席満席
-        p = 180;
-      } else if(clock >= 870 && clock < 900){
-        // 14:30〜15:00: 徐々に席が埋まる (150→180へ線形補間)
-        const ratio = (clock - 870) / 30;
-        p = Math.min(p, Math.round(150 + 30 * ratio));
-      } else if(clock > 960 && clock <= 975){
-        // 16:00〜16:15: 徐々に退席 (180→通常へ)
-        const ratio = (clock - 960) / 15;
-        p = Math.min(p, Math.round(180 - 30 * ratio));
-      } else {
-        p = Math.min(p, 150);
-      }
-    }
-    const a = z.w * z.h, d = p / a;
-    zo[z.id] = {p: Math.round(p), d, a};
+  let inv=0;const entR=runnerRate(t)+visitorRate(t);
+  for(let i=Math.max(0,Math.floor(t-45));i<=Math.min(SIMDUR,Math.floor(t));i++){const d=AD[i];if(!d)continue;const el=t-i;inv+=d.rr*Math.max(0,1-ncdf(el,AVG_STAY,STAY_SD));inv+=d.vr*Math.max(0,1-ncdf(el,VISITOR_STAY,VISITOR_SD));}
+  if(SIM0+t>=960)inv*=Math.max(0,1-(SIM0+t-960)/30);
+  const exR=runnerRate(Math.max(0,t-AVG_STAY))+visitorRate(Math.max(0,t-VISITOR_STAY));
+  let q=0;const rr=runnerRate(t);
+  if(rr>ENTRY_CAP){for(let i=Math.max(0,Math.floor(t-30));i<=Math.floor(t);i++){const r2=runnerRate(i);if(r2>ENTRY_CAP)q+=r2-ENTRY_CAP;else q=Math.max(0,q-(ENTRY_CAP-r2));}}
+  const zo={};
+  Z.forEach(z=>{
+    let f=0;
+    switch(z.id){case'entry_area':f=.15;break;case'left_aisle':f=.13;break;case'mizuno_front':f=.08;break;case'center_mid':f=.25;break;case'center_south':f=.20;break;case'right_aisle':f=.05;break;case'rest_stage':f=.14;break;}
+    let p=inv*f;
+    if(z.id==='rest_stage'){const clock=SIM0+t;if(clock>=900&&clock<=960)p=180;else if(clock>=870&&clock<900){p=Math.min(p,Math.round(150+30*(clock-870)/30));}else if(clock>960&&clock<=975){p=Math.min(p,Math.round(180-30*(clock-960)/15));}else p=Math.min(p,150);}
+    zo[z.id]={p:Math.round(p),d:p/(z.w*z.h),a:z.w*z.h};
   });
-  return {
-    inv: Math.round(inv),
-    entR,
-    exR,
-    zo,
-    entU: Math.min(rr / ENTRY_CAP, 2),
-    exU: Math.min(exR / EXIT_CAP, 2),
-    q: Math.round(q),
-    cum: Math.round(AD[Math.min(Math.floor(t), SIMDUR)]?.cum || 0)
-  };
+  return{inv:Math.round(inv),entR,exR,zo,entU:Math.min(rr/ENTRY_CAP,2),exU:Math.min(exR/EXIT_CAP,2),q:Math.round(q),cum:Math.round(AD[Math.min(Math.floor(t),SIMDUR)]?.cum||0)};
 }
 
 // ===================== DRAWING =====================
-function dc(d,a){
-  if(a===undefined)a=1;
-  if(d<.3)return`rgba(34,197,94,${a})`;if(d<.5)return`rgba(132,204,22,${a})`;
-  if(d<1)return`rgba(234,179,8,${a})`;if(d<2)return`rgba(249,115,22,${a})`;
-  return`rgba(239,68,68,${a})`;
-}
-function dcs(d){
-  if(d<.3)return'#22c55e';if(d<.5)return'#84cc16';
-  if(d<1)return'#eab308';if(d<2)return'#f97316';return'#ef4444';
-}
+function dc(d,a){if(a===undefined)a=1;if(d<.3)return`rgba(34,197,94,${a})`;if(d<.5)return`rgba(132,204,22,${a})`;if(d<1)return`rgba(234,179,8,${a})`;if(d<2)return`rgba(249,115,22,${a})`;return`rgba(239,68,68,${a})`;}
+function dcs(d){if(d<.3)return'#22c55e';if(d<.5)return'#84cc16';if(d<1)return'#eab308';if(d<2)return'#f97316';return'#ef4444';}
 
 function draw(s){
-  const w = canvas.width/DPR, h = canvas.height/DPR;
+  const w=canvas.width/DPR,h=canvas.height/DPR;
   ctx.clearRect(0,0,w,h);
-  // Venue bg
-  const[fx,fy] = tx(0,0);
-  ctx.fillStyle='#0d1525';
-  ctx.strokeStyle='#1e293b';ctx.lineWidth=2;
-  ctx.beginPath();ctx.rect(fx,fy,VW*S,VH*S);ctx.fill();ctx.stroke();
+  const[fx,fy]=tx(0,0);
+  ctx.fillStyle='#0b1120';ctx.strokeStyle='#1a2540';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.roundRect(fx,fy,VW*S,VH*S,6);ctx.fill();ctx.stroke();
 
   // Zone heat
-  Z.forEach(z => {
-    const d = s.zo[z.id];
-    if(!d) return;
-    const[zx,zy] = tx(z.x,z.y);
-    const zw = z.w*S, zh = z.h*S;
-    // Radial gradient
-    const cx2 = zx+zw/2, cy2 = zy+zh/2;
-    const r = Math.max(zw,zh)*.7;
-    const g = ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,r);
-    g.addColorStop(0, dc(d.d,.55));
-    g.addColorStop(1, dc(d.d,.15));
-    ctx.fillStyle = g;
-    ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,6);ctx.fill();
-    // border glow when crowded
-    if(d.d>.5){
-      ctx.strokeStyle = dc(d.d,.4);ctx.lineWidth=2;
-      ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,6);ctx.stroke();
-    }
+  Z.forEach(z=>{
+    const d=s.zo[z.id];if(!d)return;
+    const[zx,zy]=tx(z.x,z.y);const zw=z.w*S,zh=z.h*S;
+    const cx2=zx+zw/2,cy2=zy+zh/2,r=Math.max(zw,zh)*.7;
+    const g=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,r);
+    g.addColorStop(0,dc(d.d,.5));g.addColorStop(1,dc(d.d,.1));
+    ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,4);ctx.fill();
+    if(d.d>.5){ctx.strokeStyle=dc(d.d,.35);ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(zx,zy,zw,zh,4);ctx.stroke();}
   });
 
-  // Booths
-  B.forEach(b => {
-    const[bx,by] = tx(b.x,b.y);
-    const bw = b.w*S, bh = b.h*S;
-    ctx.fillStyle = b.c+'30';ctx.strokeStyle = b.c+'66';ctx.lineWidth=1;
+  // Booths — improved text visibility
+  B.forEach(b=>{
+    const[bx,by]=tx(b.x,b.y);const bw=b.w*S,bh=b.h*S;
+    ctx.fillStyle=b.c+'25';ctx.strokeStyle=b.c+'55';ctx.lineWidth=1;
     ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#556677';
-    const fs = Math.max(7, Math.min(11, bw/6));
-    ctx.font=`bold ${fs}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    b.nm.split('\n').forEach((l,i,a) => {
-      ctx.fillText(l, bx+bw/2, by+bh/2+(i-(a.length-1)/2)*(fs+1));
-    });
+    const fs=Math.max(7,Math.min(11,bw/6));
+    ctx.font=`bold ${fs}px 'Noto Sans JP',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    // Shadow for readability
+    ctx.fillStyle='rgba(0,0,0,.7)';
+    b.nm.split('\n').forEach((l,i,a)=>{ctx.fillText(l,bx+bw/2+.5,by+bh/2+(i-(a.length-1)/2)*(fs+1)+.5);});
+    // Bright text
+    ctx.fillStyle='#c8d6e5';
+    b.nm.split('\n').forEach((l,i,a)=>{ctx.fillText(l,bx+bw/2,by+bh/2+(i-(a.length-1)/2)*(fs+1));});
   });
 
-  // Flow paths (2 routes)
-  ctx.lineWidth=2;ctx.setLineDash([6,4]);
-  ctx.strokeStyle='rgba(96,165,250,.2)';
-  ctx.beginPath();
-  FP_LEFT.forEach((p,i) => { const[px,py]=tx(p.x,p.y); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
-  ctx.stroke();
-  ctx.strokeStyle='rgba(250,204,21,.15)';
-  ctx.beginPath();
-  FP_RIGHT.forEach((p,i) => { const[px,py]=tx(p.x,p.y); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
-  ctx.stroke();
+  // Flow paths
+  ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.strokeStyle='rgba(96,165,250,.15)';ctx.beginPath();
+  FP_LEFT.forEach((p,i)=>{const[px,py]=tx(p.x,p.y);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
+  ctx.strokeStyle='rgba(250,204,21,.1)';ctx.beginPath();
+  FP_RIGHT.forEach((p,i)=>{const[px,py]=tx(p.x,p.y);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
   ctx.setLineDash([]);
 
-  // Animated particles (now constrained to corridors)
   drawParts(s);
 
-  // Big zone badges
-  Z.forEach(z => {
-    const d = s.zo[z.id];
-    if(!d || d.p < 10) return;  // 10人未満のゾーンはバッジ非表示
-    const[zx,zy] = tx(z.x,z.y);
-    const zw = z.w*S, zh = z.h*S;
-    const cx2 = zx+zw/2, cy2 = zy+zh/2;
+  // Zone badges
+  Z.forEach(z=>{
+    const d=s.zo[z.id];if(!d||d.p<10)return;
+    const[zx,zy]=tx(z.x,z.y);const zw=z.w*S,zh=z.h*S;
+    const cx2=zx+zw/2,cy2=zy+zh/2;
     if(d.d>.2){
-      const label = `${d.p}人`;
-      ctx.font='bold 14px sans-serif';
-      const tw = ctx.measureText(label).width;
-      const bw2 = tw+16, bh2 = 24;
-      // Background pill
-      ctx.fillStyle = dc(d.d,.9);
-      ctx.beginPath();ctx.roundRect(cx2-bw2/2,cy2-bh2/2,bw2,bh2,12);ctx.fill();
-      // Shadow
-      ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=6;
+      const label=`${d.p}人`;
+      ctx.font="bold 13px 'JetBrains Mono',monospace";
+      const tw=ctx.measureText(label).width;const bw2=tw+14,bh2=22;
+      ctx.fillStyle=dc(d.d,.85);ctx.beginPath();ctx.roundRect(cx2-bw2/2,cy2-bh2/2,bw2,bh2,11);ctx.fill();
+      ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=4;
       ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.font='bold 14px sans-serif';
-      ctx.fillText(label,cx2,cy2);
-      ctx.shadowBlur=0;
-      // Density sub-label
-      if(zh>30){
-        ctx.fillStyle='rgba(255,255,255,.65)';
-        ctx.font='10px sans-serif';
-        ctx.fillText(`${d.d.toFixed(1)}人/m²`,cx2,cy2+14);
-      }
+      ctx.fillText(label,cx2,cy2);ctx.shadowBlur=0;
+      if(zh>28){ctx.fillStyle='rgba(255,255,255,.6)';ctx.font="9px 'Noto Sans JP',sans-serif";ctx.fillText(`${d.d.toFixed(1)}人/m²`,cx2,cy2+13);}
     }
   });
 
-  // Entry / Exit indicators
-  const[ex2,ey2] = tx(2,74);
-  ctx.fillStyle='#22c55e';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
+  // Labels
+  const[ex2,ey2]=tx(2,74);
+  ctx.fillStyle='#22c55e';ctx.font="bold 12px 'Noto Sans JP',sans-serif";ctx.textAlign='left';
   ctx.fillText('▲ ランナー入口',ex2,ey2+4);
-  if(s.q>20){
-    ctx.fillStyle='#ef4444';ctx.font='bold 12px sans-serif';
-    ctx.fillText(`待ち行列 約${s.q}人`,ex2+120,ey2+4);
-  }
-
-  const[ox2,oy2] = tx(48,0);
-  ctx.fillStyle='#ef4444';ctx.font='bold 13px sans-serif';ctx.textAlign='center';
+  if(s.q>20){ctx.fillStyle='#ef4444';ctx.font="bold 11px 'Noto Sans JP',sans-serif";ctx.fillText(`待ち行列 約${s.q}人`,ex2+110,ey2+4);}
+  const[ox2,oy2]=tx(48,0);
+  ctx.fillStyle='#ef4444';ctx.font="bold 12px 'Noto Sans JP',sans-serif";ctx.textAlign='center';
   ctx.fillText('▼ 出口',ox2+10,oy2-3);
-
-  // Top gate utilization
-  drawBar(42,0,s.entU,'入口',90);
-  drawBar(62,0,s.exU,'出口',90);
+  drawBar(42,0,s.entU,'入口',80);drawBar(62,0,s.exU,'出口',80);
 }
 
 function drawBar(mx,my,u,label,bw){
-  const[bx,by] = tx(mx,my);
-  const y2 = by-14;
-  ctx.fillStyle='#1e293b';ctx.beginPath();ctx.roundRect(bx,y2,bw,6,3);ctx.fill();
-  ctx.fillStyle = u>1?'#ef4444':u>.7?'#f97316':'#22c55e';
-  ctx.beginPath();ctx.roundRect(bx,y2,Math.min(u/1.5,1)*bw,6,3);ctx.fill();
-  ctx.fillStyle='#64748b';ctx.font='9px sans-serif';ctx.textAlign='left';
-  ctx.fillText(`${label}${Math.round(Math.min(u,1.5)*100)}%`,bx,y2-3);
+  const[bx,by]=tx(mx,my);const y2=by-13;
+  ctx.fillStyle='#1a2540';ctx.beginPath();ctx.roundRect(bx,y2,bw,5,2.5);ctx.fill();
+  ctx.fillStyle=u>1?'#ef4444':u>.7?'#f97316':'#22c55e';
+  ctx.beginPath();ctx.roundRect(bx,y2,Math.min(u/1.5,1)*bw,5,2.5);ctx.fill();
+  ctx.fillStyle='#64748b';ctx.font="8px 'Noto Sans JP',sans-serif";ctx.textAlign='left';
+  ctx.fillText(`${label}${Math.round(Math.min(u,1.5)*100)}%`,bx,y2-2);
 }
 
-// ===================== ゾーン別パーティクルシステム =====================
-// 各ゾーンの人数に応じてそのゾーン内にドットを配置
-// ブース前には滞留する人を表現、混雑時は移動速度低下
-
-// ブース前に人がたまる「滞留ポイント」定義
-// 各ブースの手前(通路側)に滞留エリアを設定
-const DWELL_POINTS = [
-  {nm:'トヨタカローラ', x:22, y:57, w:18, h:3, cap:40},  // くじ引き待ち
-  {nm:'アルペン',      x:44, y:57, w:16, h:3, cap:35},   // 買い物
-  {nm:'大英産業',      x:64, y:57, w:14, h:3, cap:20},
-  {nm:'ミズノ',        x:28, y:32, w:38, h:3, cap:50},   // 大型ブース
-  {nm:'フォトクリエイト',x:24, y:46, w:9, h:2, cap:15},
-  {nm:'マクドナルド',   x:24, y:52, w:10, h:2, cap:20},
-  {nm:'ボートレース若松',x:4, y:38, w:18, h:2, cap:25},
-  {nm:'180席休憩',     x:85, y:38, w:16, h:10, cap:60},  // 休憩エリア
-];
-
-let parts = [];
-let zoneParts = {}; // ゾーン別パーティクル管理
-
-// ゾーン内のランダム位置(ブース内を避ける)
-function randInZone(z){
-  for(let t=0;t<30;t++){
-    const x = z.x + Math.random()*z.w;
-    const y = z.y + Math.random()*z.h;
-    // ブース内チェック
-    let inBooth = false;
-    for(const b of B){
-      if(x>=b.x && x<b.x+b.w && y>=b.y && y<b.y+b.h){ inBooth=true; break; }
-    }
-    if(!inBooth) return {x,y};
-  }
-  return {x: z.x+z.w/2, y: z.y+z.h/2};
-}
+// ===================== PARTICLES =====================
+let parts=[];
+function randInZone(z){for(let t=0;t<30;t++){const x=z.x+Math.random()*z.w,y=z.y+Math.random()*z.h;let ib=false;for(const b of B){if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h){ib=true;break;}}if(!ib)return{x,y};}return{x:z.x+z.w/2,y:z.y+z.h/2};}
 
 function drawParts(s){
-  // 全パーティクルをクリアして各ゾーンに再配置(毎フレーム)
-  // パフォーマンスのため、既存パーティクルは位置を微調整するだけ
-
-  const totalTarget = Math.min(Math.round(s.inv), 3000);
-
-  // ゾーン別の目標パーティクル数を計算
-  const zoneTargets = {};
-  Z.forEach(z => {
-    const d = s.zo[z.id];
-    if(!d) return;
-    zoneTargets[z.id] = Math.round(d.p * (totalTarget / Math.max(s.inv,1)));
-  });
-
-  // 初回 or パーティクル数が大きく変わったら再構築
-  if(Math.abs(parts.length - totalTarget) > totalTarget*0.3 || parts.length === 0){
-    parts = [];
-    Z.forEach(z => {
-      const n = zoneTargets[z.id] || 0;
-      for(let i=0;i<n;i++){
-        const pos = randInZone(z);
-        // 一定割合をブース前滞留ポイントに配置
-        let dwelling = false;
-        for(const dp of DWELL_POINTS){
-          if(pos.x >= dp.x && pos.x < dp.x+dp.w && pos.y >= dp.y && pos.y < dp.y+dp.h){
-            dwelling = true; break;
-          }
-        }
-        parts.push({
-          x:pos.x, y:pos.y, zid:z.id,
-          vx:(Math.random()-.5)*.06, vy:(Math.random()-.5)*.06,
-          life:80+Math.random()*160,
-          dwelling: dwelling,
-          dwellTimer: dwelling ? 30+Math.random()*60 : 0,
-          col: Math.random()<.1 ? 'rgba(251,191,36,' : 'rgba(96,165,250,'
-        });
-      }
-    });
+  const totalTarget=Math.min(Math.round(s.inv),3000);
+  const zoneTargets={};
+  Z.forEach(z=>{const d=s.zo[z.id];if(!d)return;zoneTargets[z.id]=Math.round(d.p*(totalTarget/Math.max(s.inv,1)));});
+  if(Math.abs(parts.length-totalTarget)>totalTarget*.3||parts.length===0){
+    parts=[];
+    Z.forEach(z=>{const n=zoneTargets[z.id]||0;for(let i=0;i<n;i++){const pos=randInZone(z);let dw=false;for(const dp of DWELL_POINTS){if(pos.x>=dp.x&&pos.x<dp.x+dp.w&&pos.y>=dp.y&&pos.y<dp.y+dp.h){dw=true;break;}}parts.push({x:pos.x,y:pos.y,zid:z.id,vx:(Math.random()-.5)*.06,vy:(Math.random()-.5)*.06,life:80+Math.random()*160,dwelling:dw,dwellTimer:dw?30+Math.random()*60:0,col:Math.random()<.1?'rgba(251,191,36,':'rgba(96,165,250,'});}});
   }
+  while(parts.length<totalTarget){const zids=Object.keys(zoneTargets);const zid=zids[Math.floor(Math.random()*zids.length)];const z=Z.find(zz=>zz.id===zid);if(!z)break;const pos=randInZone(z);parts.push({x:pos.x,y:pos.y,zid,vx:(Math.random()-.5)*.06,vy:(Math.random()-.5)*.06,life:80+Math.random()*160,dwelling:false,dwellTimer:0,col:Math.random()<.1?'rgba(251,191,36,':'rgba(96,165,250,'});}
+  while(parts.length>totalTarget)parts.pop();
 
-  // パーティクル数の増減
-  while(parts.length < totalTarget){
-    const zids = Object.keys(zoneTargets);
-    const zid = zids[Math.floor(Math.random()*zids.length)];
-    const z = Z.find(zz=>zz.id===zid);
-    if(!z) break;
-    const pos = randInZone(z);
-    parts.push({
-      x:pos.x, y:pos.y, zid,
-      vx:(Math.random()-.5)*.06, vy:(Math.random()-.5)*.06,
-      life:80+Math.random()*160, dwelling:false, dwellTimer:0,
-      col: Math.random()<.1 ? 'rgba(251,191,36,' : 'rgba(96,165,250,'
-    });
-  }
-  while(parts.length > totalTarget) parts.pop();
-
-  // 描画 + 物理更新
-  parts.forEach(p => {
-    // 所属ゾーンの密度を取得
-    const zd = s.zo[p.zid];
-    const density = zd ? zd.d : 0;
-
-    // 混雑による速度低下: 密度が高いほど遅く
-    const speedMult = density > 1.5 ? 0.02 : density > 1 ? 0.04 : density > 0.5 ? 0.06 : 0.1;
-
-    // 滞留中はほぼ動かない
-    if(p.dwelling && p.dwellTimer > 0){
-      p.dwellTimer -= 0.3;
-      p.x += (Math.random()-.5)*0.02;  // 微小な揺れのみ
-      p.y += (Math.random()-.5)*0.02;
-    } else {
-      p.dwelling = false;
-      p.x += p.vx * speedMult * 3;
-      p.y += p.vy * speedMult * 3;
-      // ランダムに方向転換
-      if(Math.random()<.02){ p.vx=(Math.random()-.5)*.1; p.vy=(Math.random()-.5)*.1; }
-
-      // ブース前に来たら滞留開始(確率30%)
-      if(Math.random()<.005){
-        for(const dp of DWELL_POINTS){
-          if(p.x>=dp.x && p.x<dp.x+dp.w && p.y>=dp.y && p.y<dp.y+dp.h){
-            p.dwelling=true; p.dwellTimer=20+Math.random()*40; break;
-          }
-        }
-      }
-    }
-
-    // ブース内に入ったら押し出す
-    for(const b of B){
-      if(p.x>=b.x && p.x<b.x+b.w && p.y>=b.y && p.y<b.y+b.h){
-        // 最短方向に押し出す
-        const dL=p.x-b.x, dR=b.x+b.w-p.x, dT=p.y-b.y, dB=b.y+b.h-p.y;
-        const mn=Math.min(dL,dR,dT,dB);
-        if(mn===dL) p.x=b.x-0.5; else if(mn===dR) p.x=b.x+b.w+0.5;
-        else if(mn===dT) p.y=b.y-0.5; else p.y=b.y+b.h+0.5;
-      }
-    }
-
-    // ゾーン内に留める
-    const z = Z.find(zz=>zz.id===p.zid);
-    if(z){
-      p.x = Math.max(z.x, Math.min(z.x+z.w, p.x));
-      p.y = Math.max(z.y, Math.min(z.y+z.h, p.y));
-    }
-
-    p.life -= .15;
-    if(p.life<0){
-      // リスポーン
-      if(z){ const pos=randInZone(z); p.x=pos.x; p.y=pos.y; }
-      p.life=80+Math.random()*160;
-    }
-
-    // 描画: 大きめドット + 混雑時はさらに強調
-    const[cx2,cy2] = tx(p.x, p.y);
-    const alpha = Math.min(.85, .4 + density*0.3);
-    const radius = density > 1 ? 3.5 : density > 0.5 ? 3 : 2.5;
-    ctx.fillStyle = p.col + alpha + ')';
-    ctx.beginPath(); ctx.arc(cx2,cy2,radius,0,6.28); ctx.fill();
-
-    // 混雑エリアではドットにグロー効果
-    if(density > 0.8){
-      ctx.fillStyle = p.col + (alpha*0.2) + ')';
-      ctx.beginPath(); ctx.arc(cx2,cy2,radius+2,0,6.28); ctx.fill();
-    }
+  parts.forEach(p=>{
+    const zd=s.zo[p.zid],density=zd?zd.d:0;
+    const spM=density>1.5?.02:density>1?.04:density>.5?.06:.1;
+    if(p.dwelling&&p.dwellTimer>0){p.dwellTimer-=.3;p.x+=(Math.random()-.5)*.02;p.y+=(Math.random()-.5)*.02;}
+    else{p.dwelling=false;p.x+=p.vx*spM*3;p.y+=p.vy*spM*3;if(Math.random()<.02){p.vx=(Math.random()-.5)*.1;p.vy=(Math.random()-.5)*.1;}if(Math.random()<.005){for(const dp of DWELL_POINTS){if(p.x>=dp.x&&p.x<dp.x+dp.w&&p.y>=dp.y&&p.y<dp.y+dp.h){p.dwelling=true;p.dwellTimer=20+Math.random()*40;break;}}}}
+    for(const b of B){if(p.x>=b.x&&p.x<b.x+b.w&&p.y>=b.y&&p.y<b.y+b.h){const dL=p.x-b.x,dR=b.x+b.w-p.x,dT=p.y-b.y,dB=b.y+b.h-p.y,mn=Math.min(dL,dR,dT,dB);if(mn===dL)p.x=b.x-.5;else if(mn===dR)p.x=b.x+b.w+.5;else if(mn===dT)p.y=b.y-.5;else p.y=b.y+b.h+.5;}}
+    const z=Z.find(zz=>zz.id===p.zid);if(z){p.x=Math.max(z.x,Math.min(z.x+z.w,p.x));p.y=Math.max(z.y,Math.min(z.y+z.h,p.y));}
+    p.life-=.15;if(p.life<0){if(z){const pos=randInZone(z);p.x=pos.x;p.y=pos.y;}p.life=80+Math.random()*160;}
+    const[cx2,cy2]=tx(p.x,p.y);
+    const alpha=Math.min(.8,.35+density*.3),radius=density>1?3:density>.5?2.5:2;
+    ctx.fillStyle=p.col+alpha+')';ctx.beginPath();ctx.arc(cx2,cy2,radius,0,6.28);ctx.fill();
+    if(density>.8){ctx.fillStyle=p.col+(alpha*.15)+')';ctx.beginPath();ctx.arc(cx2,cy2,radius+2,0,6.28);ctx.fill();}
   });
 }
 
 // ===================== SIDEBAR =====================
 function updateUI(s){
-  const occ = document.getElementById('mOcc');
-  occ.textContent = s.inv.toLocaleString()+'人';
-  occ.className = 'row-v ' + (s.inv>2500?'red':s.inv>1800?'orange':s.inv>1000?'yellow':'green');
-  document.getElementById('mOccSub').textContent = `ピーク${pkOcc.toLocaleString()}人の${Math.round(s.inv/pkOcc*100)}%`;
+  const occ=document.getElementById('mOcc');occ.textContent=s.inv.toLocaleString()+'人';
+  occ.className='row-v '+(s.inv>2500?'red':s.inv>1800?'orange':s.inv>1000?'yellow':'green');
+  document.getElementById('mOccSub').textContent=`ピーク${pkOcc.toLocaleString()}人の${Math.round(s.inv/pkOcc*100)}%`;
+  const ir=document.getElementById('mIn');ir.textContent=Math.round(s.entR)+'人/分';
+  ir.className='row-v '+(s.entR>ENTRY_CAP?'red':s.entR>ENTRY_CAP*.7?'orange':'green');
+  document.getElementById('mOut').textContent=Math.round(s.exR)+'人/分';
+  const azs=Z.filter(z=>z.id!=='rest_stage'),tA=azs.reduce((a,z)=>a+z.w*z.h,0),tP=azs.reduce((a,z)=>a+(s.zo[z.id]?.p||0),0),ad=tP/tA;
+  const de=document.getElementById('mDens');de.textContent=ad.toFixed(2)+'人/m²';
+  de.className='row-v '+(ad>1.5?'red':ad>1?'orange':ad>.5?'yellow':'green');
+  const bar=document.getElementById('mBar');bar.style.width=Math.min(100,ad/2.5*100)+'%';bar.style.background=dcs(ad);
+  const qe=document.getElementById('mQ');
+  if(s.q>10){qe.textContent=`約${s.q}人 (${Math.round(s.q/ENTRY_CAP)}分待ち)`;qe.className='row-v '+(s.q>100?'red':'orange');}else{qe.textContent='なし';qe.className='row-v green';}
+  document.getElementById('arrived').textContent=`到着 ${s.cum.toLocaleString()} / ${(RUNNERS+VISITORS).toLocaleString()}`;
 
-  const ir = document.getElementById('mIn');
-  ir.textContent = Math.round(s.entR)+'人/分';
-  ir.className = 'row-v ' + (s.entR>ENTRY_CAP?'red':s.entR>ENTRY_CAP*.7?'orange':'green');
-  document.getElementById('mOut').textContent = Math.round(s.exR)+'人/分';
+  const zl=document.getElementById('zoneList');zl.innerHTML='';
+  Z.forEach(z=>{const d=s.zo[z.id];if(!d)return;zl.innerHTML+=`<div class="zone-item"><div class="zone-dot" style="background:${dcs(d.d)}"></div><span class="zone-nm">${z.nm}</span><span class="zone-d">${d.d.toFixed(2)}人/m²</span><span class="zone-n" style="color:${dcs(d.d)}">${d.p}人</span></div>`;});
 
-  const azs = Z.filter(z => z.id!=='rest_stage');
-  const tA = azs.reduce((a,z) => a+z.w*z.h, 0);
-  const tP = azs.reduce((a,z) => a+(s.zo[z.id]?.p||0), 0);
-  const ad = tP/tA;
-  const de = document.getElementById('mDens');
-  de.textContent = ad.toFixed(2)+'人/m²';
-  de.className = 'row-v ' + (ad>1.5?'red':ad>1?'orange':ad>.5?'yellow':'green');
-  const bar = document.getElementById('mBar');
-  bar.style.width = Math.min(100, ad/2.5*100)+'%';
-  bar.style.background = dcs(ad);
+  const ae=document.getElementById('alerts');ae.innerHTML='';const al=[];
+  if(s.entU>.85){al.push({c:'r',t:`入口渋滞 — 負荷${Math.round(s.entU*100)}%`,x:`到着${Math.round(s.entR)}人/分 vs 処理${ENTRY_CAP}人/分。推定${Math.round(s.q/ENTRY_CAP)}分待ち。`});}
+  if(s.zo.center_mid?.d>.8)al.push({c:'y',t:`ブース中段混雑 — ${s.zo.center_mid.d.toFixed(1)}人/m²`,x:`${s.zo.center_mid.p}人がフォトクリエイト〜漫画ミュージアム周辺に集中。`});
+  if(s.zo.center_south?.d>.8)al.push({c:'y',t:`南側通路混雑 — ${s.zo.center_south.d.toFixed(1)}人/m²`,x:`トヨタカローラ/アルペン前に${s.zo.center_south.p}人。くじ引き・買い物で滞留。`});
+  if(s.inv>2000)al.push({c:'r',t:'会場収容限界接近',x:`同時${s.inv.toLocaleString()}人。避難時の安全確保が困難な密度。`});
+  if(!al.length)ae.innerHTML='<div style="color:#475569;font-size:11px;padding:6px 0">現在、重大な警告なし</div>';
+  else al.forEach(a=>{ae.innerHTML+=`<div class="alert alert-${a.c}"><div class="alert-t">${a.t}</div><div class="alert-x">${a.x}</div></div>`;});
 
-  const qe = document.getElementById('mQ');
-  if(s.q>10){
-    qe.textContent = `約${s.q}人 (${Math.round(s.q/ENTRY_CAP)}分待ち)`;
-    qe.className = 'row-v ' + (s.q>100?'red':'orange');
-  } else {
-    qe.textContent = 'なし';
-    qe.className = 'row-v green';
-  }
-
-  document.getElementById('arrived').textContent = `到着 ${s.cum.toLocaleString()} / ${(RUNNERS+VISITORS).toLocaleString()}`;
-
-  // Zones
-  const zl = document.getElementById('zoneList');
-  zl.innerHTML = '';
-  Z.forEach(z => {
-    const d = s.zo[z.id];
-    if(!d) return;
-    zl.innerHTML += `<div class="zone-item"><div class="zone-dot" style="background:${dcs(d.d)}"></div><span class="zone-nm">${z.nm}</span><span class="zone-d">${d.d.toFixed(2)}人/m²</span><span class="zone-n" style="color:${dcs(d.d)}">${d.p}人</span></div>`;
-  });
-
-  // Alerts
-  const ae = document.getElementById('alerts');
-  ae.innerHTML = '';
-  const al = [];
-  if(s.entU>.85){
-    const w2 = Math.round(s.q/ENTRY_CAP);
-    al.push({c:'r',t:`入口渋滞 — 負荷${Math.round(s.entU*100)}%`,x:`到着${Math.round(s.entR)}人/分 vs 処理${ENTRY_CAP}人/分。推定${w2}分待ち。疲労ランナーが屋外で立ち続けるリスク。`});
-  }
-  const cm = s.zo.center_mid;
-  if(cm && cm.d>0.8){
-    al.push({c:'y',t:`ブース中段混雑 — ${cm.d.toFixed(1)}人/m²`,x:`${cm.p}人がフォトクリエイト〜漫画ミュージアム周辺に集中。買い物・ガラポンで滞留。`});
-  }
-  const cs = s.zo.center_south;
-  if(cs && cs.d>0.8){
-    al.push({c:'y',t:`南側通路混雑 — ${cs.d.toFixed(1)}人/m²`,x:`トヨタカローラ/アルペン前に${cs.p}人。くじ引き・買い物で滞留発生。`});
-  }
-  // 出口通路（ロビー）は通過のみなのでアラート不要
-  if(s.inv>2000){
-    al.push({c:'r',t:'会場収容限界接近',x:`同時${s.inv.toLocaleString()}人。避難時の安全確保が困難な密度。`});
-  }
-  if(!al.length){
-    ae.innerHTML = '<div style="color:#475569;font-size:12px;padding:6px 0">現在、重大な警告なし</div>';
-  } else {
-    al.forEach(a => {
-      ae.innerHTML += `<div class="alert alert-${a.c}"><div class="alert-t">${a.t}</div><div class="alert-x">${a.x}</div></div>`;
-    });
-  }
-
-  // Tips
-  const te = document.getElementById('tips');
-  te.innerHTML = '';
-  const tp = [];
-  if(s.entU>.6 || s.q>20){
-    tp.push({t:'入口拡幅 + 記録証分離',x:'入口を8〜10mに拡幅し、記録証発行を別ブースへ分離。入口スループット70%向上。'});
-  }
-  if(cm && cm.d>.6){
-    tp.push({t:'中段ブースの動線分離',x:'通過者とブース立ち寄り者の動線を分離。ブース前に並び列スペースを確保。'});
-  }
-  if(s.inv>1500){
-    tp.push({t:'出口の2系統化',x:'「入口専用」ゲートを午後は出口にも開放。退場処理能力2倍。'});
-  }
+  const te=document.getElementById('tips');te.innerHTML='';const tp=[];
+  if(s.entU>.6||s.q>20)tp.push({t:'入口拡幅 + 記録証分離',x:'入口を8〜10mに拡幅し、記録証発行を別ブースへ分離。入口スループット70%向上。'});
+  if(s.zo.center_mid?.d>.6)tp.push({t:'中段ブースの動線分離',x:'通過者とブース立ち寄り者の動線を分離。ブース前に並び列スペースを確保。'});
+  if(s.inv>1500)tp.push({t:'出口の2系統化',x:'「入口専用」ゲートを午後は出口にも開放。退場処理能力2倍。'});
   tp.push({t:'ピーク時の速達ルート',x:'13:00〜14:30は「荷物受取→即退場」の専用レーンを設置。滞在10分以下でピーク人数40%削減。'});
-  if(s.zo.rest_stage?.d>.4){
-    tp.push({t:'休憩席の増設',x:'180席では不足。南側ブース前に仮設ベンチ200席追加を推奨。'});
-  }
-  tp.forEach(t => {
-    te.innerHTML += `<div class="alert alert-b"><div class="alert-t">💡 ${t.t}</div><div class="alert-x">${t.x}</div></div>`;
-  });
-
-  document.getElementById('liveBadge').style.display = playing?'inline-block':'none';
+  if(s.zo.rest_stage?.d>.4)tp.push({t:'休憩席の増設',x:'180席では不足。南側ブース前に仮設ベンチ200席追加を推奨。'});
+  tp.forEach(t=>{te.innerHTML+=`<div class="alert alert-b"><div class="alert-t">💡 ${t.t}</div><div class="alert-x">${t.x}</div></div>`;});
+  document.getElementById('liveBadge').style.display=playing?'inline-block':'none';
 }
 
 // ===================== CHART =====================
 function drawChart(ct){
-  const c = document.getElementById('chartC');
-  const x2 = c.getContext('2d');
-  c.width = c.clientWidth*DPR;
-  c.height = c.clientHeight*DPR;
+  const c=document.getElementById('chartC'),x2=c.getContext('2d');
+  c.width=c.clientWidth*DPR;c.height=c.clientHeight*DPR;
   x2.setTransform(DPR,0,0,DPR,0,0);
-  const w = c.clientWidth, h = c.clientHeight;
-  x2.clearRect(0,0,w,h);
-  const mR = Math.max(...AD.map(d=>d.total));
-  const mO = Math.max(...OD);
-  const p = {l:32, r:32, t:5, b:18};
-  const cw = w-p.l-p.r, ch = h-p.t-p.b;
-  // Grid
+  const w=c.clientWidth,h=c.clientHeight;x2.clearRect(0,0,w,h);
+  const mR=Math.max(...AD.map(d=>d.total)),mO=Math.max(...OD);
+  const p={l:32,r:32,t:5,b:18},cw=w-p.l-p.r,ch=h-p.t-p.b;
   x2.strokeStyle='#111827';x2.lineWidth=.5;
-  for(let i=0; i<=4; i++){
-    const y = p.t+ch*i/4;
-    x2.beginPath();x2.moveTo(p.l,y);x2.lineTo(w-p.r,y);x2.stroke();
-  }
-  // Rate area
-  x2.beginPath();x2.moveTo(p.l,p.t+ch);
-  AD.forEach(d => {
-    x2.lineTo(p.l+(d.t/SIMDUR)*cw, p.t+ch-(d.total/mR)*ch);
-  });
-  x2.lineTo(p.l+cw,p.t+ch);x2.closePath();
-  const g = x2.createLinearGradient(0,p.t,0,p.t+ch);
-  g.addColorStop(0,'rgba(59,130,246,.3)');
-  g.addColorStop(1,'rgba(59,130,246,.02)');
-  x2.fillStyle = g;
-  x2.fill();
-  x2.beginPath();
-  AD.forEach((d,i) => {
-    const xx = p.l+(d.t/SIMDUR)*cw, yy = p.t+ch-(d.total/mR)*ch;
-    i ? x2.lineTo(xx,yy) : x2.moveTo(xx,yy);
-  });
-  x2.strokeStyle='#3b82f6';x2.lineWidth=1.5;x2.stroke();
+  for(let i=0;i<=4;i++){const y=p.t+ch*i/4;x2.beginPath();x2.moveTo(p.l,y);x2.lineTo(w-p.r,y);x2.stroke();}
+  // Rate area fill
+  x2.beginPath();x2.moveTo(p.l,p.t+ch);AD.forEach(d=>{x2.lineTo(p.l+(d.t/SIMDUR)*cw,p.t+ch-(d.total/mR)*ch);});x2.lineTo(p.l+cw,p.t+ch);x2.closePath();
+  const g=x2.createLinearGradient(0,p.t,0,p.t+ch);g.addColorStop(0,'rgba(59,130,246,.25)');g.addColorStop(1,'rgba(59,130,246,.02)');x2.fillStyle=g;x2.fill();
+  // Rate line
+  x2.beginPath();AD.forEach((d,i)=>{const xx=p.l+(d.t/SIMDUR)*cw,yy=p.t+ch-(d.total/mR)*ch;i?x2.lineTo(xx,yy):x2.moveTo(xx,yy);});x2.strokeStyle='#3b82f6';x2.lineWidth=1.5;x2.stroke();
   // Occ line
-  x2.beginPath();
-  OD.forEach((o,t) => {
-    const xx = p.l+(t/SIMDUR)*cw, yy = p.t+ch-(o/mO)*ch;
-    t ? x2.lineTo(xx,yy) : x2.moveTo(xx,yy);
-  });
-  x2.strokeStyle='#f97316';x2.lineWidth=1.5;x2.stroke();
+  x2.beginPath();OD.forEach((o,t)=>{const xx=p.l+(t/SIMDUR)*cw,yy=p.t+ch-(o/mO)*ch;t?x2.lineTo(xx,yy):x2.moveTo(xx,yy);});x2.strokeStyle='#f97316';x2.lineWidth=1.5;x2.stroke();
   // Danger line
-  if(mO>2000){
-    const dy = p.t+ch-(2000/mO)*ch;
-    x2.strokeStyle='rgba(239,68,68,.35)';x2.lineWidth=1;x2.setLineDash([4,4]);
-    x2.beginPath();x2.moveTo(p.l,dy);x2.lineTo(w-p.r,dy);x2.stroke();x2.setLineDash([]);
-    x2.fillStyle='rgba(239,68,68,.5)';x2.font='9px sans-serif';x2.textAlign='right';
-    x2.fillText('危険',w-p.r-2,dy-2);
-  }
+  if(mO>2000){const dy=p.t+ch-(2000/mO)*ch;x2.strokeStyle='rgba(239,68,68,.3)';x2.lineWidth=1;x2.setLineDash([4,4]);x2.beginPath();x2.moveTo(p.l,dy);x2.lineTo(w-p.r,dy);x2.stroke();x2.setLineDash([]);x2.fillStyle='rgba(239,68,68,.5)';x2.font="9px sans-serif";x2.textAlign='right';x2.fillText('危険',w-p.r-2,dy-2);}
   // Now line
-  const nx = p.l+(ct/SIMDUR)*cw;
-  x2.strokeStyle='#ef4444';x2.lineWidth=1.5;x2.setLineDash([3,3]);
-  x2.beginPath();x2.moveTo(nx,p.t);x2.lineTo(nx,p.t+ch);x2.stroke();x2.setLineDash([]);
-  // Labels
-  x2.fillStyle='#475569';x2.font='10px sans-serif';x2.textAlign='center';
-  ['11:10','12:00','13:00','14:00','15:00','16:00','16:30'].forEach((l,i) => {
-    const ts = [0,50,110,170,230,290,320];
-    x2.fillText(l, p.l+(ts[i]/SIMDUR)*cw, h-3);
-  });
+  const nx=p.l+(ct/SIMDUR)*cw;x2.strokeStyle='#ef4444';x2.lineWidth=1.5;x2.setLineDash([3,3]);x2.beginPath();x2.moveTo(nx,p.t);x2.lineTo(nx,p.t+ch);x2.stroke();x2.setLineDash([]);
+  // X labels
+  x2.fillStyle='#475569';x2.font="10px sans-serif";x2.textAlign='center';
+  ['11:10','12:00','13:00','14:00','15:00','16:00','16:30'].forEach((l,i)=>{const ts=[0,50,110,170,230,290,320];x2.fillText(l,p.l+(ts[i]/SIMDUR)*cw,h-3);});
   x2.textAlign='right';x2.fillStyle='#3b82f6';x2.fillText(Math.round(mR)+'人/分',p.l-2,p.t+10);
   x2.textAlign='left';x2.fillStyle='#f97316';x2.fillText(Math.round(mO)+'人',w-p.r+2,p.t+10);
 }
 
 // ===================== PEAKS =====================
-let pkOcc = 0, pkT = 0, pkR = 0, pkRT = 0;
+let pkOcc=0,pkT=0,pkR=0,pkRT=0;
 function peaks(){
-  for(let t = 0; t <= SIMDUR; t++){
-    if(OD[t] > pkOcc){
-      pkOcc = Math.round(OD[t]);
-      pkT = t;
-    }
-    const r = AD[t]?.total||0;
-    if(r > pkR){
-      pkR = r;
-      pkRT = t;
-    }
-  }
-  const c1 = SIM0+pkT, h1 = Math.floor(c1/60), m1 = c1%60;
-  const c2 = SIM0+pkRT, h2 = Math.floor(c2/60), m2 = c2%60;
-  const aZ = Z.filter(z => z.id !== 'rest_stage');
-  const aA = aZ.reduce((a,z) => a+z.w*z.h, 0);
-  const pD = (pkOcc*.73)/aA;
-  // ブース中段（最も混むエリア）
-  const cmZ = Z.find(z => z.id==='center_mid');
-  const cmP = Math.round(pkOcc*.25), cmD = cmP/(cmZ.w*cmZ.h);
-  // 南側通路 (トヨタカローラ/アルペン方面)
-  const csZ = Z.find(z => z.id==='center_south');
-  const csP = Math.round(pkOcc*.20), csD = csP/(csZ.w*csZ.h);
-  document.getElementById('peakBox').innerHTML = `
-    <h3>⚡ ピーク分析</h3><p>
+  for(let t=0;t<=SIMDUR;t++){if(OD[t]>pkOcc){pkOcc=Math.round(OD[t]);pkT=t;}const r=AD[t]?.total||0;if(r>pkR){pkR=r;pkRT=t;}}
+  const c1=SIM0+pkT,h1=Math.floor(c1/60),m1=c1%60;
+  const c2=SIM0+pkRT,h2=Math.floor(c2/60),m2=c2%60;
+  const aZ=Z.filter(z=>z.id!=='rest_stage'),aA=aZ.reduce((a,z)=>a+z.w*z.h,0),pD=(pkOcc*.73)/aA;
+  const cmZ=Z.find(z=>z.id==='center_mid'),cmP=Math.round(pkOcc*.25),cmD=cmP/(cmZ.w*cmZ.h);
+  const csZ=Z.find(z=>z.id==='center_south'),csP=Math.round(pkOcc*.20),csD=csP/(csZ.w*csZ.h);
+  document.getElementById('peakBox').innerHTML=`<h3>⚡ ピーク分析</h3><p>
     <strong>場内ピーク:</strong> ${h1}:${String(Math.floor(m1)).padStart(2,'0')}頃 — 約${pkOcc.toLocaleString()}人同時滞在<br>
     <strong>到着ピーク:</strong> ${h2}:${String(Math.floor(m2)).padStart(2,'0')}頃 — ${Math.round(pkR)}人/分<br>
     <strong>通路密度:</strong> ピーク時 約${pD.toFixed(1)}人/m²${pD>1.5?' ⚠危険':pD>1?' ⚠注意':''}<br>
@@ -967,63 +581,16 @@ function peaks(){
 }
 
 // ===================== CONTROLS =====================
-let curT = 0, playing = false, spd = 1, af = null, lastT = 0;
-function toggle(){
-  playing = !playing;
-  const b = document.getElementById('playBtn');
-  if(playing){
-    b.textContent = '⏸ 停止';
-    b.classList.add('on');
-    lastT = performance.now();
-    anim();
-  } else {
-    b.textContent = '▶ 再生';
-    b.classList.remove('on');
-    if(af) cancelAnimationFrame(af);
-  }
-}
-function setSpd(s){
-  spd = s;
-  document.querySelectorAll('#spdGroup button').forEach(b => {
-    b.classList.toggle('on', parseInt(b.textContent.replace('×','')) === s);
-  });
-}
-function anim(){
-  if(!playing) return;
-  const now = performance.now(), dt = (now-lastT)/1000;
-  lastT = now;
-  curT += dt*spd*.5;
-  if(curT > SIMDUR){
-    curT = SIMDUR;
-    playing = false;
-    document.getElementById('playBtn').textContent = '▶ 再生';
-    document.getElementById('playBtn').classList.remove('on');
-  }
-  document.getElementById('slider').value = curT;
-  upd(curT);
-  af = requestAnimationFrame(anim);
-}
-function seek(v){
-  curT = parseFloat(v);
-  upd(curT);
-}
-function upd(t){
-  const c = SIM0+t, hh = Math.floor(c/60), mm = Math.floor(c%60);
-  document.getElementById('clock').textContent = `${hh}:${String(mm).padStart(2,'0')}`;
-  const s = sim(t);
-  draw(s);
-  updateUI(s);
-  drawChart(t);
-}
+let curT=0,playing=false,spd=1,af=null,lastT=0;
+function toggle(){playing=!playing;const b=document.getElementById('playBtn');if(playing){b.textContent='⏸ 停止';b.classList.add('on');lastT=performance.now();anim();}else{b.textContent='▶ 再生';b.classList.remove('on');if(af)cancelAnimationFrame(af);}}
+function setSpd(s){spd=s;document.querySelectorAll('#spdGroup button').forEach(b=>{b.classList.toggle('on',parseInt(b.textContent.replace('×',''))===s);});}
+function anim(){if(!playing)return;const now=performance.now(),dt=(now-lastT)/1000;lastT=now;curT+=dt*spd*.5;if(curT>SIMDUR){curT=SIMDUR;playing=false;document.getElementById('playBtn').textContent='▶ 再生';document.getElementById('playBtn').classList.remove('on');}document.getElementById('slider').value=curT;upd(curT);af=requestAnimationFrame(anim);}
+function seek(v){curT=parseFloat(v);upd(curT);}
+function upd(t){const c=SIM0+t,hh=Math.floor(c/60),mm=Math.floor(c%60);document.getElementById('clock').textContent=`${hh}:${String(mm).padStart(2,'0')}`;const s=sim(t);draw(s);updateUI(s);drawChart(t);}
 
 // ===================== INIT =====================
-window.addEventListener('resize', () => {
-  resize();
-  upd(curT);
-});
-resize();
-peaks();
-upd(0);
+window.addEventListener('resize',()=>{resize();upd(curT);});
+resize();peaks();upd(0);
 </script>
 </body>
 </html>
